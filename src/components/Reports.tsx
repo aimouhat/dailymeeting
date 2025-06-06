@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
 import { useActions } from '../context/ActionContext';
 import { format, isSameDay, parseISO } from 'date-fns';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { mockDataService } from '../services/mockDataService';
 
 interface Report {
@@ -45,306 +43,423 @@ const Reports: React.FC = () => {
     loadHistoricalReports();
   }, []);
 
-  const generatePDF = async (actions: any[], fileName: string) => {
-    try {
-      console.log('Starting futuristic PDF generation...');
-      const doc = new jsPDF();
-      
-      // Set dark background for futuristic look
-      doc.setFillColor(15, 23, 42); // slate-900
-      doc.rect(0, 0, 210, 297, 'F');
+  const generateHTMLReport = (actions: any[], fileName: string): string => {
+    // Filter actions for today
+    const todayActionsForReport = actions.filter(action => {
+      const actionDate = new Date(action.fromDate);
+      const today = new Date();
+      return actionDate.toDateString() === today.toDateString();
+    });
 
-      // Add futuristic header background
-      doc.setFillColor(30, 41, 59); // slate-800
-      doc.rect(0, 0, 210, 50, 'F');
+    // Ensure all 4 status types are shown
+    const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
+    const statusColors = {
+      'Done': '#10B981',
+      'In Progress': '#3B82F6', 
+      'Delay': '#F59E0B',
+      'Not started': '#EF4444'
+    };
 
-      // Add glowing border effect
-      doc.setDrawColor(34, 197, 94); // emerald-500
-      doc.setLineWidth(1);
-      doc.rect(5, 5, 200, 287);
-
-      // Add secondary border for depth
-      doc.setDrawColor(59, 130, 246); // blue-500
-      doc.setLineWidth(0.5);
-      doc.rect(8, 8, 194, 281);
-
-      // Add company logos as text placeholders (more reliable than images)
-      doc.setFontSize(10);
-      doc.setTextColor(34, 197, 94);
-      doc.setFont('helvetica', 'bold');
-      doc.text('FUTURE IS MINE', 15, 20);
-      doc.text('INTEGRATED MINES', 90, 20);
-      doc.text('OCP GROUP', 165, 20);
-
-      // Add futuristic title with gradient effect simulation
-      doc.setFontSize(28);
-      doc.setTextColor(34, 197, 94); // emerald-500
-      doc.setFont('helvetica', 'bold');
-      doc.text('DAILY MEETING REPORT', 105, 65, { align: 'center' });
-
-      // Add subtitle with neon effect
-      doc.setFontSize(14);
-      doc.setTextColor(59, 130, 246); // blue-500
-      doc.setFont('helvetica', 'normal');
-      doc.text('INTEGRATED EXPLORATORY MINES', 105, 75, { align: 'center' });
-
-      // Add date with modern styling
-      doc.setFontSize(12);
-      doc.setTextColor(148, 163, 184); // slate-400
-      doc.text(format(new Date(), 'dddd, MMMM Do, yyyy'), 105, 85, { align: 'center' });
-
-      // Add decorative line with gradient effect
-      doc.setDrawColor(34, 197, 94);
-      doc.setLineWidth(2);
-      doc.line(30, 95, 180, 95);
-
-      // Add KPIs Section with futuristic design
-      let yPosition = 110;
-      
-      // KPIs Header with background
-      doc.setFillColor(30, 41, 59); // slate-800
-      doc.rect(20, yPosition - 5, 170, 20, 'F');
-      doc.setDrawColor(34, 197, 94);
-      doc.setLineWidth(0.5);
-      doc.rect(20, yPosition - 5, 170, 20);
-
-      doc.setFontSize(16);
-      doc.setTextColor(34, 197, 94);
-      doc.setFont('helvetica', 'bold');
-      doc.text('ACTION STATUS ANALYTICS', 105, yPosition + 5, { align: 'center' });
-      yPosition += 30;
-
-      // Total Actions with futuristic card design
-      doc.setFillColor(51, 65, 85); // slate-700
-      doc.rect(70, yPosition - 5, 70, 25, 'F');
-      doc.setDrawColor(59, 130, 246);
-      doc.setLineWidth(1);
-      doc.rect(70, yPosition - 5, 70, 25);
-
-      doc.setFontSize(12);
-      doc.setTextColor(148, 163, 184);
-      doc.setFont('helvetica', 'bold');
-      doc.text('TOTAL ACTIONS', 105, yPosition + 3, { align: 'center' });
-      
-      doc.setFontSize(24);
-      doc.setTextColor(34, 197, 94);
-      doc.text(actions.length.toString(), 105, yPosition + 15, { align: 'center' });
-      yPosition += 40;
-
-      // Ensure all 4 status types are shown
-      const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
-      const statusColors = {
-        'Done': [16, 185, 129], // emerald-500
-        'In Progress': [59, 130, 246], // blue-500
-        'Delay': [245, 158, 11], // amber-500
-        'Not started': [239, 68, 68] // red-500
+    const completeStatusStats = allStatusTypes.map(status => {
+      const existingStat = statusStats.find(s => s.status === status);
+      return existingStat || {
+        status,
+        count: 0,
+        percentage: 0,
+        color: statusColors[status as keyof typeof statusColors]
       };
+    });
 
-      const completeStatusStats = allStatusTypes.map(status => {
-        const existingStat = statusStats.find(s => s.status === status);
-        return existingStat || {
-          status,
-          count: 0,
-          percentage: 0,
-          color: `rgb(${statusColors[status as keyof typeof statusColors].join(',')})`
-        };
-      });
+    const totalActions = actions.length;
 
-      // KPI Cards in a futuristic grid
-      const cardWidth = 40;
-      const cardHeight = 35;
-      const startX = 25;
-      const cardSpacing = 5;
-
-      completeStatusStats.forEach((stat, index) => {
-        const cardX = startX + (index * (cardWidth + cardSpacing));
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Meeting Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
-        // Card background with gradient effect
-        doc.setFillColor(51, 65, 85); // slate-700
-        doc.rect(cardX, yPosition, cardWidth, cardHeight, 'F');
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
         
-        // Card border with status color
-        const statusColor = statusColors[stat.status as keyof typeof statusColors];
-        doc.setDrawColor(statusColor[0], statusColor[1], statusColor[2]);
-        doc.setLineWidth(1.5);
-        doc.rect(cardX, yPosition, cardWidth, cardHeight);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
         
-        // Status indicator bar
-        doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
-        doc.rect(cardX, yPosition, cardWidth, 3, 'F');
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
         
-        // Status name
-        doc.setFontSize(8);
-        doc.setTextColor(203, 213, 225); // slate-300
-        doc.setFont('helvetica', 'bold');
-        doc.text(stat.status.toUpperCase(), cardX + cardWidth/2, yPosition + 12, { align: 'center' });
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
         
-        // Percentage with glow effect
-        doc.setFontSize(16);
-        doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${stat.percentage.toFixed(1)}%`, cardX + cardWidth/2, yPosition + 22, { align: 'center' });
+        .logos {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
         
-        // Count
-        doc.setFontSize(7);
-        doc.setTextColor(148, 163, 184); // slate-400
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${stat.count} ACTIONS`, cardX + cardWidth/2, yPosition + 30, { align: 'center' });
-      });
-
-      yPosition += cardHeight + 25;
-
-      // Filter actions for today
-      const todayActionsForReport = actions.filter(action => {
-        const actionDate = new Date(action.fromDate);
-        const today = new Date();
-        return actionDate.toDateString() === today.toDateString();
-      });
-
-      // Today's Actions Header with futuristic design
-      doc.setFillColor(30, 41, 59);
-      doc.rect(20, yPosition - 5, 170, 18, 'F');
-      doc.setDrawColor(34, 197, 94);
-      doc.setLineWidth(0.5);
-      doc.rect(20, yPosition - 5, 170, 18);
-
-      doc.setFontSize(14);
-      doc.setTextColor(34, 197, 94);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`TODAY'S MISSION BRIEFING (${todayActionsForReport.length} ACTIONS)`, 105, yPosition + 5, { align: 'center' });
-      
-      doc.setFontSize(10);
-      doc.setTextColor(59, 130, 246);
-      doc.text(format(new Date(), 'dddd, MMMM Do, yyyy').toUpperCase(), 105, yPosition + 12, { align: 'center' });
-      yPosition += 25;
-
-      if (todayActionsForReport.length === 0) {
-        // No actions message with futuristic styling
-        doc.setFillColor(51, 65, 85);
-        doc.rect(40, yPosition, 130, 30, 'F');
-        doc.setDrawColor(59, 130, 246);
-        doc.setLineWidth(1);
-        doc.rect(40, yPosition, 130, 30);
-
-        doc.setFontSize(14);
-        doc.setTextColor(148, 163, 184);
-        doc.setFont('helvetica', 'italic');
-        doc.text('NO ACTIVE MISSIONS TODAY', 105, yPosition + 12, { align: 'center' });
-        doc.setFontSize(10);
-        doc.text('ALL SYSTEMS OPERATIONAL', 105, yPosition + 22, { align: 'center' });
-      } else {
-        // Add actions table with futuristic styling
-        const tableColumn = ['ACTION PLAN', 'TAGS', 'ASSIGNED TO', 'FROM', 'TO'];
-        const tableRows = todayActionsForReport.map(action => [
-          action.actionPlan,
-          action.tags || '-',
-          action.assignedTo || 'UNASSIGNED',
-          format(new Date(action.fromDate), 'dd/MM/yyyy'),
-          format(new Date(action.toDate), 'dd/MM/yyyy'),
-        ]);
-
-        autoTable(doc, {
-          head: [tableColumn],
-          body: tableRows,
-          startY: yPosition,
-          theme: 'plain',
-          styles: {
-            fontSize: 9,
-            cellPadding: 4,
-            textColor: [203, 213, 225], // slate-300
-            lineWidth: 0.5,
-            lineColor: [59, 130, 246], // blue-500
-            overflow: 'linebreak',
-            cellWidth: 'wrap',
-            valign: 'top',
-            fillColor: [51, 65, 85] // slate-700
-          },
-          headStyles: {
-            fillColor: [30, 41, 59], // slate-800
-            textColor: [34, 197, 94], // emerald-500
-            fontSize: 10,
-            fontStyle: 'bold',
-            halign: 'center',
-            valign: 'middle',
-            lineWidth: 1,
-            lineColor: [34, 197, 94]
-          },
-          alternateRowStyles: {
-            fillColor: [45, 55, 72], // slate-600
-          },
-          columnStyles: {
-            0: { cellWidth: 80, halign: 'left' }, // Action Plan
-            1: { cellWidth: 25, halign: 'center' }, // Tags
-            2: { cellWidth: 40, halign: 'center' }, // Assigned To
-            3: { cellWidth: 22, halign: 'center' }, // From Date
-            4: { cellWidth: 22, halign: 'center' }, // To Date
-          },
-          margin: { left: 15, right: 15 },
-          pageBreak: 'auto',
-          showHead: 'everyPage',
-          tableWidth: 'auto',
-          didParseCell: function(data) {
-            if (data.column.index === 0) {
-              data.cell.styles.minCellHeight = 12;
+        .logo {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+            font-weight: bold;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        .title {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .date {
+            font-size: 1em;
+            opacity: 0.8;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .kpi-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--status-color);
+        }
+        
+        .kpi-card.total {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            grid-column: span 2;
+        }
+        
+        .kpi-card.total::before {
+            background: #10B981;
+        }
+        
+        .kpi-label {
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+        
+        .kpi-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-percentage {
+            font-size: 1.1em;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+        
+        .actions-section {
+            margin-top: 40px;
+        }
+        
+        .actions-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+        }
+        
+        .actions-count {
+            font-size: 1.2em;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+        
+        .actions-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .actions-table th {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            padding: 15px 10px;
+            text-align: left;
+            font-weight: bold;
+            color: #1e3c72;
+            border-bottom: 2px solid #e2e8f0;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .actions-table td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }
+        
+        .actions-table tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        .actions-table tr:hover {
+            background: #e2e8f0;
+        }
+        
+        .action-plan {
+            font-weight: 600;
+            color: #1e3c72;
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+        
+        .tag {
+            background: #e2e8f0;
+            color: #64748b;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        
+        .assigned-to {
+            font-weight: 500;
+            color: #475569;
+        }
+        
+        .date-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #64748b;
+        }
+        
+        .no-actions {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            font-style: italic;
+            background: #f8fafc;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .footer {
+            background: #1e3c72;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        
+        .footer-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+            background: #10B981;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
             }
-          },
-          didDrawPage: function(data) {
-            // Add page background for continuation pages
-            if (data.pageNumber > 1) {
-              doc.setFillColor(15, 23, 42);
-              doc.rect(0, 0, 210, 297, 'F');
-              
-              // Add borders on continuation pages
-              doc.setDrawColor(34, 197, 94);
-              doc.setLineWidth(1);
-              doc.rect(5, 5, 200, 287);
-              doc.setDrawColor(59, 130, 246);
-              doc.setLineWidth(0.5);
-              doc.rect(8, 8, 194, 281);
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
             }
-          }
-        });
-      }
-
-      // Add futuristic footer on all pages
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logos">
+                <div class="logo">FUTURE IS MINE</div>
+                <div class="logo">INTEGRATED EXPLORATORY MINES</div>
+                <div class="logo">OCP GROUP</div>
+            </div>
+            <div class="title">DAILY MEETING REPORT</div>
+            <div class="subtitle">Mining Operations Dashboard</div>
+            <div class="date">${format(new Date(), 'EEEE, MMMM do, yyyy')}</div>
+        </div>
         
-        // Footer background
-        doc.setFillColor(30, 41, 59);
-        doc.rect(0, 280, 210, 17, 'F');
+        <div class="content">
+            <div class="kpi-section">
+                <h2 class="section-title">Action Status Analytics</h2>
+                <div class="kpi-grid">
+                    <div class="kpi-card total">
+                        <div class="kpi-label">Total Actions</div>
+                        <div class="kpi-value">${totalActions}</div>
+                        <div class="kpi-percentage">All Operations</div>
+                    </div>
+                    ${completeStatusStats.map(stat => `
+                        <div class="kpi-card" style="--status-color: ${stat.color}">
+                            <div class="kpi-label">${stat.status}</div>
+                            <div class="kpi-value" style="color: ${stat.color}">${stat.count}</div>
+                            <div class="kpi-percentage">${stat.percentage.toFixed(1)}%</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="actions-section">
+                <div class="actions-header">
+                    <h2>Today's Mission Briefing</h2>
+                    <div class="actions-count">${todayActionsForReport.length} Active Actions</div>
+                </div>
+                
+                ${todayActionsForReport.length > 0 ? `
+                    <table class="actions-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Action Plan</th>
+                                <th style="width: 10%">Tags</th>
+                                <th style="width: 20%">Assigned To</th>
+                                <th style="width: 15%">From Date</th>
+                                <th style="width: 15%">To Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${todayActionsForReport.map(action => `
+                                <tr>
+                                    <td class="action-plan">${action.actionPlan}</td>
+                                    <td>${action.tags ? `<span class="tag">${action.tags}</span>` : '-'}</td>
+                                    <td class="assigned-to">${action.assignedTo || 'UNASSIGNED'}</td>
+                                    <td class="date-cell">${format(new Date(action.fromDate), 'dd/MM/yyyy')}</td>
+                                    <td class="date-cell">${format(new Date(action.toDate), 'dd/MM/yyyy')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                ` : `
+                    <div class="no-actions">
+                        <h3>No Active Missions Today</h3>
+                        <p>All systems operational - No scheduled actions for today</p>
+                    </div>
+                `}
+            </div>
+        </div>
         
-        // Footer border
-        doc.setDrawColor(34, 197, 94);
-        doc.setLineWidth(0.5);
-        doc.line(10, 280, 200, 280);
-        
-        // Footer text
-        doc.setFontSize(8);
-        doc.setTextColor(148, 163, 184);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`GENERATED: ${format(new Date(), 'dd/MM/yyyy HH:mm')} UTC`, 15, 290);
-        doc.text(`CLASSIFICATION: INTERNAL`, 105, 290, { align: 'center' });
-        doc.text(`PAGE ${i} OF ${pageCount}`, 195, 290, { align: 'right' });
-        
-        // Add system status indicator
-        doc.setFillColor(34, 197, 94);
-        doc.circle(200, 285, 1, 'F');
-        doc.setFontSize(6);
-        doc.setTextColor(34, 197, 94);
-        doc.text('ONLINE', 195, 285, { align: 'right' });
-      }
-
-      // Save the PDF
-      const pdfData = doc.output('datauristring');
-      await mockDataService.saveReport({ fileName, pdfData });
-      doc.save(fileName);
-      return true;
-    } catch (error) {
-      console.error('Error generating futuristic PDF:', error);
-      return false;
-    }
+        <div class="footer">
+            <div class="footer-info">
+                <div>Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')} UTC</div>
+                <div>Classification: INTERNAL</div>
+                <div><span class="status-indicator"></span>System Online</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
   };
 
   const generateReport = async () => {
@@ -357,28 +472,44 @@ const Reports: React.FC = () => {
         isSameDay(parseISO(report.date), today)
       );
 
-      const success = await generatePDF(actions, fileName);
-
-      if (success) {
-        const newReport: Report = {
-          id: fileName,
-          date: format(today, 'yyyy-MM-dd'),
-          fileName,
-          filePath: `Historical Reports/${fileName}`,
+      // Generate HTML content
+      const htmlContent = generateHTMLReport(actions, fileName);
+      
+      // Create a new window to display and print the report
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        
+        // Wait for content to load then trigger print
+        printWindow.onload = () => {
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
         };
-
-        let updatedReports;
-        if (existingReportIndex !== -1) {
-          updatedReports = [...historicalReports];
-          updatedReports[existingReportIndex] = newReport;
-        } else {
-          updatedReports = [newReport, ...historicalReports];
-        }
-        setHistoricalReports(updatedReports);
-        alert('PDF report generated successfully!');
-      } else {
-        alert('Failed to generate PDF. Please try again.');
       }
+
+      // Save to mock service
+      const pdfData = 'data:application/pdf;base64,' + btoa(htmlContent);
+      await mockDataService.saveReport({ fileName, pdfData });
+
+      const newReport: Report = {
+        id: fileName,
+        date: format(today, 'yyyy-MM-dd'),
+        fileName,
+        filePath: `Historical Reports/${fileName}`,
+      };
+
+      let updatedReports;
+      if (existingReportIndex !== -1) {
+        updatedReports = [...historicalReports];
+        updatedReports[existingReportIndex] = newReport;
+      } else {
+        updatedReports = [newReport, ...historicalReports];
+      }
+      setHistoricalReports(updatedReports);
+      
+      alert('PDF report generated successfully! Check your browser\'s print dialog.');
     } catch (error) {
       console.error('Error in generateReport:', error);
       alert('An error occurred while generating the report.');
