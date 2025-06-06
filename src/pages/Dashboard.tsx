@@ -142,8 +142,8 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-full mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 flex-grow">
-        {/* Mobile Dashboard Title */}
+      <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 flex-grow">
+        {/* Dashboard Title */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-2 sm:space-y-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Mobile Layout - Stack vertically */}
-        <div className="space-y-4 sm:space-y-6 mb-6 sm:mb-8">
+        <div className="lg:hidden space-y-4 sm:space-y-6 mb-6 sm:mb-8">
           {/* Status KPIs - Full width on mobile */}
           <div className="w-full">
             <StatusKPIs stats={statusStats} />
@@ -196,7 +196,49 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Bar */}
+        {/* Desktop Layout - Side by side */}
+        <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 mb-8">
+          {/* Status KPIs - Takes 7 columns */}
+          <div className="col-span-7">
+            <StatusKPIs stats={statusStats} />
+          </div>
+          
+          {/* Video/Recording Section - Takes 5 columns */}
+          <div className="col-span-5">
+            <div className="bg-white rounded-lg shadow-md h-full">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-lg font-semibold">
+                  {showVideo ? 'Meeting Video' : 'Voice Recording'}
+                </h2>
+                <button
+                  onClick={() => setShowVideo(!showVideo)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Switch to {showVideo ? 'Recording' : 'Video'}
+                </button>
+              </div>
+              <div className="p-4 h-[calc(100%-4rem)]">
+                {showVideo ? (
+                  <div className="h-full">
+                    <VideoPlayer folderPath="/videos" />
+                  </div>
+                ) : (
+                  <div className="space-y-4 h-full">
+                    <AudioRecorder onTranscriptionComplete={handleTranscriptionComplete} />
+                    {transcribedText && (
+                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                        <h3 className="text-sm font-medium text-gray-700 mb-2">Transcribed Text:</h3>
+                        <p className="text-gray-600">{transcribedText}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Bar - Full width */}
         <div className="mb-4 sm:mb-6">
           <FilterBar 
             onFilter={filterActions} 
@@ -204,8 +246,8 @@ const Dashboard: React.FC = () => {
           />
         </div>
 
-        {/* Action List */}
-        <div>
+        {/* Action List - Full width */}
+        <div className="w-full">
           <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Action List</h2>
           <ActionTable actions={filteredActions} />
         </div>
