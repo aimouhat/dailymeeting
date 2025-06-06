@@ -65,7 +65,7 @@ const FloatingVideoPlayer: React.FC = () => {
 
   const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
     console.error('Video error:', e);
-    setError('Error loading video. Please check if the video file exists at /videos/4.mp4');
+    setError('Video file not found. Please add a video file named "4.mp4" to the public/videos directory.');
   };
 
   return (
@@ -97,33 +97,36 @@ const FloatingVideoPlayer: React.FC = () => {
 
         {/* Video container */}
         <div className="mt-6">
-          {error && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-              <p className="text-red-400 text-xs p-2 text-center">{error}</p>
+          {error ? (
+            <div className="w-[240px] h-[135px] flex items-center justify-center bg-gray-800 rounded-b-lg">
+              <p className="text-red-400 text-xs p-4 text-center">{error}</p>
             </div>
+          ) : (
+            <>
+              <video
+                ref={videoRef}
+                src="/videos/4.mp4"
+                className="w-[240px] h-[135px] rounded-b-lg"
+                controls={false}
+                onError={handleVideoError}
+                loop
+              />
+              
+              {/* Controls */}
+              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black/50 rounded-full px-2 py-0.5">
+                <button
+                  onClick={togglePlay}
+                  className="text-white hover:text-blue-400 transition-colors"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4" />
+                  ) : (
+                    <Play className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </>
           )}
-          <video
-            ref={videoRef}
-            src="/videos/4.mp4"
-            className="w-[240px] h-[135px] rounded-b-lg"
-            controls={false}
-            onError={handleVideoError}
-            loop
-          />
-          
-          {/* Controls */}
-          <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black/50 rounded-full px-2 py-0.5">
-            <button
-              onClick={togglePlay}
-              className="text-white hover:text-blue-400 transition-colors"
-            >
-              {isPlaying ? (
-                <Pause className="w-4 h-4" />
-              ) : (
-                <Play className="w-4 h-4" />
-              )}
-            </button>
-          </div>
         </div>
 
         {/* Glow effect */}
@@ -135,4 +138,4 @@ const FloatingVideoPlayer: React.FC = () => {
   );
 };
 
-export default FloatingVideoPlayer; 
+export default FloatingVideoPlayer;

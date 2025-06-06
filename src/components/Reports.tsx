@@ -234,8 +234,8 @@ const Reports: React.FC = () => {
         });
       }
 
-      // Add summary section at the bottom
-      const finalY = (doc as any).lastAutoTable.finalY || yPosition + 30;
+      // Add summary section at the bottom - Fixed with optional chaining
+      const finalY = (doc as any).lastAutoTable?.finalY || yPosition + 30;
       
       // Summary box
       doc.setFillColor(248, 250, 252);
