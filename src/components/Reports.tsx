@@ -49,11 +49,11 @@ const Reports: React.FC = () => {
 
   const generatePDF = async (actions: any[], fileName: string) => {
     try {
-      console.log('Starting PDF generation...');
+      console.log('Starting futuristic PDF generation...');
       const doc = new jsPDF();
       
-      // Set white background
-      doc.setFillColor(255, 255, 255);
+      // Set dark background for futuristic look
+      doc.setFillColor(15, 23, 42); // slate-900
       doc.rect(0, 0, 210, 297, 'F');
 
       // Function to load and convert image to base64
@@ -83,57 +83,87 @@ const Reports: React.FC = () => {
         loadImageAsBase64('/3.png')
       ]);
 
-      // Add logos if they were loaded successfully
-      if (logo1Base64) doc.addImage(logo1Base64, 'PNG', 10, 15, 35, 18);
-      if (logo2Base64) doc.addImage(logo2Base64, 'PNG', 87.5, 15, 35, 18);
-      if (logo3Base64) doc.addImage(logo3Base64, 'PNG', 165, 15, 35, 18);
+      // Add futuristic header background
+      doc.setFillColor(30, 41, 59); // slate-800
+      doc.rect(0, 0, 210, 50, 'F');
 
-      // Add decorative line
-      doc.setDrawColor(34, 197, 94); // Green color
+      // Add glowing border effect
+      doc.setDrawColor(34, 197, 94); // emerald-500
+      doc.setLineWidth(1);
+      doc.rect(5, 5, 200, 287);
+
+      // Add secondary border for depth
+      doc.setDrawColor(59, 130, 246); // blue-500
       doc.setLineWidth(0.5);
-      doc.line(20, 40, 190, 40);
+      doc.rect(8, 8, 194, 281);
 
-      // Add title with modern styling
-      doc.setFontSize(24);
-      doc.setTextColor(34, 197, 94); // Green color
+      // Add logos with better positioning
+      if (logo1Base64) doc.addImage(logo1Base64, 'PNG', 15, 12, 30, 16);
+      if (logo2Base64) doc.addImage(logo2Base64, 'PNG', 90, 12, 30, 16);
+      if (logo3Base64) doc.addImage(logo3Base64, 'PNG', 165, 12, 30, 16);
+
+      // Add futuristic title with gradient effect simulation
+      doc.setFontSize(28);
+      doc.setTextColor(34, 197, 94); // emerald-500
       doc.setFont('helvetica', 'bold');
-      doc.text('Daily Meeting Report', 105, 55, { align: 'center' });
+      doc.text('DAILY MEETING REPORT', 105, 65, { align: 'center' });
+
+      // Add subtitle with neon effect
+      doc.setFontSize(14);
+      doc.setTextColor(59, 130, 246); // blue-500
+      doc.setFont('helvetica', 'normal');
+      doc.text('INTEGRATED EXPLORATORY MINES', 105, 75, { align: 'center' });
 
       // Add date with modern styling
       doc.setFontSize(12);
-      doc.setTextColor(100, 100, 100);
-      doc.setFont('helvetica', 'normal');
-      doc.text(today, 105, 65, { align: 'center' });
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text(format(new Date(), 'dddd, MMMM Do, YYYY'), 105, 85, { align: 'center' });
 
-      // Add KPIs Section
-      let yPosition = 85;
+      // Add decorative line with gradient effect
+      doc.setDrawColor(34, 197, 94);
+      doc.setLineWidth(2);
+      doc.line(30, 95, 180, 95);
+
+      // Add KPIs Section with futuristic design
+      let yPosition = 110;
       
-      // KPIs Header
+      // KPIs Header with background
+      doc.setFillColor(30, 41, 59); // slate-800
+      doc.rect(20, yPosition - 5, 170, 20, 'F');
+      doc.setDrawColor(34, 197, 94);
+      doc.setLineWidth(0.5);
+      doc.rect(20, yPosition - 5, 170, 20);
+
       doc.setFontSize(16);
       doc.setTextColor(34, 197, 94);
       doc.setFont('helvetica', 'bold');
-      doc.text('Action Status KPIs', 105, yPosition, { align: 'center' });
-      yPosition += 15;
+      doc.text('ACTION STATUS ANALYTICS', 105, yPosition + 5, { align: 'center' });
+      yPosition += 30;
 
-      // Total Actions
-      doc.setFontSize(14);
-      doc.setTextColor(60, 60, 60);
+      // Total Actions with futuristic card design
+      doc.setFillColor(51, 65, 85); // slate-700
+      doc.rect(70, yPosition - 5, 70, 25, 'F');
+      doc.setDrawColor(59, 130, 246);
+      doc.setLineWidth(1);
+      doc.rect(70, yPosition - 5, 70, 25);
+
+      doc.setFontSize(12);
+      doc.setTextColor(148, 163, 184);
       doc.setFont('helvetica', 'bold');
-      doc.text('Total Actions', 105, yPosition, { align: 'center' });
-      yPosition += 8;
+      doc.text('TOTAL ACTIONS', 105, yPosition + 3, { align: 'center' });
       
-      doc.setFontSize(20);
-      doc.setTextColor(59, 130, 246); // Blue color
-      doc.text(actions.length.toString(), 105, yPosition, { align: 'center' });
-      yPosition += 20;
+      doc.setFontSize(24);
+      doc.setTextColor(34, 197, 94);
+      doc.text(actions.length.toString(), 105, yPosition + 15, { align: 'center' });
+      yPosition += 40;
 
       // Ensure all 4 status types are shown
       const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
       const statusColors = {
-        'Done': '#10B981',
-        'In Progress': '#3B82F6',
-        'Delay': '#F59E0B',
-        'Not started': '#EF4444'
+        'Done': [16, 185, 129], // emerald-500
+        'In Progress': [59, 130, 246], // blue-500
+        'Delay': [245, 158, 11], // amber-500
+        'Not started': [239, 68, 68] // red-500
       };
 
       const completeStatusStats = allStatusTypes.map(status => {
@@ -142,53 +172,53 @@ const Reports: React.FC = () => {
           status,
           count: 0,
           percentage: 0,
-          color: statusColors[status as keyof typeof statusColors]
+          color: `rgb(${statusColors[status as keyof typeof statusColors].join(',')})`
         };
       });
 
-      // KPI Cards in a row
+      // KPI Cards in a futuristic grid
       const cardWidth = 40;
-      const cardHeight = 25;
+      const cardHeight = 35;
       const startX = 25;
       const cardSpacing = 5;
 
       completeStatusStats.forEach((stat, index) => {
         const cardX = startX + (index * (cardWidth + cardSpacing));
         
-        // Card background
-        doc.setFillColor(245, 247, 250);
+        // Card background with gradient effect
+        doc.setFillColor(51, 65, 85); // slate-700
         doc.rect(cardX, yPosition, cardWidth, cardHeight, 'F');
         
-        // Card border
-        doc.setDrawColor(229, 231, 235);
-        doc.setLineWidth(0.5);
+        // Card border with status color
+        const statusColor = statusColors[stat.status as keyof typeof statusColors];
+        doc.setDrawColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.setLineWidth(1.5);
         doc.rect(cardX, yPosition, cardWidth, cardHeight);
         
-        // Status name
-        doc.setFontSize(10);
-        doc.setTextColor(75, 85, 99);
-        doc.setFont('helvetica', 'bold');
-        doc.text(stat.status, cardX + cardWidth/2, yPosition + 8, { align: 'center' });
+        // Status indicator bar
+        doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.rect(cardX, yPosition, cardWidth, 3, 'F');
         
-        // Percentage
-        doc.setFontSize(14);
-        doc.setTextColor(34, 197, 94);
+        // Status name
+        doc.setFontSize(8);
+        doc.setTextColor(203, 213, 225); // slate-300
         doc.setFont('helvetica', 'bold');
-        doc.text(`${stat.percentage.toFixed(1)}%`, cardX + cardWidth/2, yPosition + 16, { align: 'center' });
+        doc.text(stat.status.toUpperCase(), cardX + cardWidth/2, yPosition + 12, { align: 'center' });
+        
+        // Percentage with glow effect
+        doc.setFontSize(16);
+        doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${stat.percentage.toFixed(1)}%`, cardX + cardWidth/2, yPosition + 22, { align: 'center' });
         
         // Count
-        doc.setFontSize(8);
-        doc.setTextColor(107, 114, 128);
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184); // slate-400
         doc.setFont('helvetica', 'normal');
-        doc.text(`${stat.count} actions`, cardX + cardWidth/2, yPosition + 22, { align: 'center' });
+        doc.text(`${stat.count} ACTIONS`, cardX + cardWidth/2, yPosition + 30, { align: 'center' });
       });
 
-      yPosition += cardHeight + 20;
-
-      // Add decorative line before table
-      doc.setDrawColor(34, 197, 94);
-      doc.line(20, yPosition, 190, yPosition);
-      yPosition += 10;
+      yPosition += cardHeight + 25;
 
       // Filter actions for today
       const todayActionsForReport = actions.filter(action => {
@@ -197,25 +227,44 @@ const Reports: React.FC = () => {
         return actionDate.toDateString() === today.toDateString();
       });
 
-      // Today's Actions Header with count
-      doc.setFontSize(16);
+      // Today's Actions Header with futuristic design
+      doc.setFillColor(30, 41, 59);
+      doc.rect(20, yPosition - 5, 170, 18, 'F');
+      doc.setDrawColor(34, 197, 94);
+      doc.setLineWidth(0.5);
+      doc.rect(20, yPosition - 5, 170, 18);
+
+      doc.setFontSize(14);
       doc.setTextColor(34, 197, 94);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Today's Actions (${todayActionsForReport.length} actions) - ${format(new Date(), 'dd MMM yyyy')}`, 105, yPosition, { align: 'center' });
-      yPosition += 15;
+      doc.text(`TODAY'S MISSION BRIEFING (${todayActionsForReport.length} ACTIONS)`, 105, yPosition + 5, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setTextColor(59, 130, 246);
+      doc.text(format(new Date(), 'dddd, MMMM Do, YYYY').toUpperCase(), 105, yPosition + 12, { align: 'center' });
+      yPosition += 25;
 
       if (todayActionsForReport.length === 0) {
-        doc.setFontSize(12);
-        doc.setTextColor(107, 114, 128);
+        // No actions message with futuristic styling
+        doc.setFillColor(51, 65, 85);
+        doc.rect(40, yPosition, 130, 30, 'F');
+        doc.setDrawColor(59, 130, 246);
+        doc.setLineWidth(1);
+        doc.rect(40, yPosition, 130, 30);
+
+        doc.setFontSize(14);
+        doc.setTextColor(148, 163, 184);
         doc.setFont('helvetica', 'italic');
-        doc.text('No actions scheduled for today', 105, yPosition + 10, { align: 'center' });
+        doc.text('NO ACTIVE MISSIONS TODAY', 105, yPosition + 12, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text('ALL SYSTEMS OPERATIONAL', 105, yPosition + 22, { align: 'center' });
       } else {
-        // Add actions table with only the requested columns
-        const tableColumn = ['Action Plan', 'Tags', 'Assigned To', 'From', 'To'];
+        // Add actions table with futuristic styling
+        const tableColumn = ['ACTION PLAN', 'TAGS', 'ASSIGNED TO', 'FROM', 'TO'];
         const tableRows = todayActionsForReport.map(action => [
-          action.actionPlan, // Full action plan text - no truncation
-          action.tags || '',
-          action.assignedTo || 'Not assigned',
+          action.actionPlan,
+          action.tags || '-',
+          action.assignedTo || 'UNASSIGNED',
           format(new Date(action.fromDate), 'dd/MM/yyyy'),
           format(new Date(action.toDate), 'dd/MM/yyyy'),
         ]);
@@ -224,55 +273,93 @@ const Reports: React.FC = () => {
           head: [tableColumn],
           body: tableRows,
           startY: yPosition,
-          theme: 'grid',
+          theme: 'plain',
           styles: {
             fontSize: 9,
-            cellPadding: 3,
-            lineColor: [34, 197, 94],
-            textColor: 60,
-            lineWidth: 0.1,
-            overflow: 'linebreak', // Allow text to wrap to new lines
+            cellPadding: 4,
+            textColor: [203, 213, 225], // slate-300
+            lineWidth: 0.5,
+            lineColor: [59, 130, 246], // blue-500
+            overflow: 'linebreak',
             cellWidth: 'wrap',
-            valign: 'top' // Align text to top of cell
+            valign: 'top',
+            fillColor: [51, 65, 85] // slate-700
           },
           headStyles: {
-            fillColor: [34, 197, 94],
-            textColor: 255,
+            fillColor: [30, 41, 59], // slate-800
+            textColor: [34, 197, 94], // emerald-500
             fontSize: 10,
             fontStyle: 'bold',
             halign: 'center',
-            valign: 'middle'
+            valign: 'middle',
+            lineWidth: 1,
+            lineColor: [34, 197, 94]
           },
           alternateRowStyles: {
-            fillColor: [245, 247, 250],
+            fillColor: [45, 55, 72], // slate-600
           },
           columnStyles: {
-            0: { cellWidth: 80 }, // Action Plan - much wider for full text
-            1: { cellWidth: 30 }, // Tags
-            2: { cellWidth: 40 }, // Assigned To
-            3: { cellWidth: 20 }, // From Date
-            4: { cellWidth: 20 }, // To Date
+            0: { cellWidth: 80, halign: 'left' }, // Action Plan
+            1: { cellWidth: 25, halign: 'center' }, // Tags
+            2: { cellWidth: 40, halign: 'center' }, // Assigned To
+            3: { cellWidth: 22, halign: 'center' }, // From Date
+            4: { cellWidth: 22, halign: 'center' }, // To Date
           },
-          margin: { left: 10, right: 10 },
-          pageBreak: 'auto', // Enable automatic page breaks
-          showHead: 'everyPage', // Show header on every page
+          margin: { left: 15, right: 15 },
+          pageBreak: 'auto',
+          showHead: 'everyPage',
           tableWidth: 'auto',
-          // Increase row height to accommodate wrapped text
           didParseCell: function(data) {
-            if (data.column.index === 0) { // Action Plan column
-              data.cell.styles.minCellHeight = 15; // Minimum height for action plan cells
+            if (data.column.index === 0) {
+              data.cell.styles.minCellHeight = 12;
+            }
+          },
+          didDrawPage: function(data) {
+            // Add page background for continuation pages
+            if (data.pageNumber > 1) {
+              doc.setFillColor(15, 23, 42);
+              doc.rect(0, 0, 210, 297, 'F');
+              
+              // Add borders on continuation pages
+              doc.setDrawColor(34, 197, 94);
+              doc.setLineWidth(1);
+              doc.rect(5, 5, 200, 287);
+              doc.setDrawColor(59, 130, 246);
+              doc.setLineWidth(0.5);
+              doc.rect(8, 8, 194, 281);
             }
           }
         });
       }
 
-      // Add footer with page number on all pages
+      // Add futuristic footer on all pages
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        
+        // Footer background
+        doc.setFillColor(30, 41, 59);
+        doc.rect(0, 280, 210, 17, 'F');
+        
+        // Footer border
+        doc.setDrawColor(34, 197, 94);
+        doc.setLineWidth(0.5);
+        doc.line(10, 280, 200, 280);
+        
+        // Footer text
         doc.setFontSize(8);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        doc.setTextColor(148, 163, 184);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`GENERATED: ${format(new Date(), 'dd/MM/yyyy HH:mm')} UTC`, 15, 290);
+        doc.text(`CLASSIFICATION: INTERNAL`, 105, 290, { align: 'center' });
+        doc.text(`PAGE ${i} OF ${pageCount}`, 195, 290, { align: 'right' });
+        
+        // Add system status indicator
+        doc.setFillColor(34, 197, 94);
+        doc.circle(200, 285, 1, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(34, 197, 94);
+        doc.text('ONLINE', 195, 285, { align: 'right' });
       }
 
       const pdfData = doc.output('datauristring');
@@ -280,7 +367,7 @@ const Reports: React.FC = () => {
       doc.save(fileName);
       return true;
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('Error generating futuristic PDF:', error);
       return false;
     }
   };
