@@ -19,6 +19,8 @@ const Reports: React.FC = () => {
   const [historicalReports, setHistoricalReports] = useState<Report[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+  
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -29,6 +31,14 @@ const Reports: React.FC = () => {
     const actionDate = new Date(action.fromDate);
     return actionDate.toDateString() === new Date().toDateString();
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const loadHistoricalReports = async () => {
@@ -404,7 +414,7 @@ const Reports: React.FC = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center transition-all duration-300 shadow-lg hover:shadow-xl"
+        className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl"
       >
         <Download className="w-5 h-5 mr-2" />
         Reports
@@ -412,33 +422,33 @@ const Reports: React.FC = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[500px] bg-white rounded-xl shadow-2xl z-50">
-          <div className="p-6 bg-slate-50 rounded-xl">
-            <div className="space-y-5">
-              <div className="bg-white rounded-xl shadow-md p-5">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Generate New Report</h3>
-                <p className="text-gray-500 mb-3">{today}</p>
-                <div className="grid grid-cols-2 gap-4 mb-3">
+        <div className={`absolute ${isMobileView ? 'left-0 right-0' : 'right-0'} mt-2 ${isMobileView ? 'w-full' : 'w-[500px]'} bg-white rounded-xl shadow-2xl z-50 max-h-[80vh] overflow-y-auto`}>
+          <div className="p-3 sm:p-6 bg-slate-50 rounded-xl">
+            <div className="space-y-3 sm:space-y-5">
+              <div className="bg-white rounded-xl shadow-md p-3 sm:p-5">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">Generate New Report</h3>
+                <p className="text-gray-500 mb-3 text-sm sm:text-base">{today}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mb-3">
                   <div>
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 text-sm sm:text-base">
                       <span className="font-medium">Total Actions:</span> {actions.length}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 text-sm sm:text-base">
                       <span className="font-medium">Today's Actions:</span> {todayActions.length}
                     </p>
                   </div>
                 </div>
-                <div className="h-32 overflow-y-auto border rounded-lg p-3 mt-2 bg-slate-100">
+                <div className="h-24 sm:h-32 overflow-y-auto border rounded-lg p-2 sm:p-3 mt-2 bg-slate-100">
                   {todayActions.length > 0 ? (
                     todayActions.map((action, index) => (
-                      <div key={index} className="text-sm text-gray-600 mb-2">
+                      <div key={index} className="text-xs sm:text-sm text-gray-600 mb-2">
                         • {action.actionPlan}
                       </div>
                     ))
                   ) : (
-                    <div className="text-sm text-gray-500 italic text-center py-4">
+                    <div className="text-xs sm:text-sm text-gray-500 italic text-center py-4">
                       No actions scheduled for today
                     </div>
                   )}
@@ -446,28 +456,28 @@ const Reports: React.FC = () => {
                 <button
                   onClick={generateReport}
                   disabled={isGenerating}
-                  className={`w-full mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:from-green-600 hover:to-green-700 transition-all duration-200 ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:from-green-600 hover:to-green-700 transition-all duration-200 text-sm sm:text-base ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <Download className="w-5 h-5" />
+                  <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span>{isGenerating ? 'Generating PDF...' : 'Generate PDF Report'}</span>
                 </button>
               </div>
 
-              <div className="bg-white rounded-xl shadow-md p-5">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Historical Reports</h3>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+              <div className="bg-white rounded-xl shadow-md p-3 sm:p-5">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Historical Reports</h3>
+                <div className="space-y-2 max-h-32 sm:max-h-48 overflow-y-auto">
                   {isLoading ? (
                     <div className="flex items-center justify-center py-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
-                      <span className="ml-2 text-sm text-gray-500">Loading reports...</span>
+                      <div className="animate-spin rounded-full h-4 w-4 sm:h-6 sm:w-6 border-b-2 border-green-500"></div>
+                      <span className="ml-2 text-xs sm:text-sm text-gray-500">Loading reports...</span>
                     </div>
                   ) : historicalReports.length > 0 ? (
                     historicalReports.map((report) => (
                       <div key={report.id} className="flex items-center justify-between p-2 hover:bg-slate-100 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <FileText className="w-5 h-5 text-green-500" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-700">{report.fileName}</p>
+                        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs sm:text-sm font-medium text-gray-700 truncate">{report.fileName}</p>
                             <p className="text-xs text-gray-500">
                               {format(parseISO(report.date), 'MMMM d, yyyy')}
                             </p>
@@ -475,14 +485,14 @@ const Reports: React.FC = () => {
                         </div>
                         <button
                           onClick={() => downloadReport(report)}
-                          className="text-green-500 hover:text-green-600"
+                          className="text-green-500 hover:text-green-600 flex-shrink-0 ml-2"
                         >
-                          <Download className="w-5 h-5" />
+                          <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500 text-center py-4">No historical reports found</p>
+                    <p className="text-xs sm:text-sm text-gray-500 text-center py-4">No historical reports found</p>
                   )}
                 </div>
               </div>
