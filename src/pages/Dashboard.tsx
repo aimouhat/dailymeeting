@@ -67,14 +67,24 @@ const Dashboard: React.FC = () => {
         <div className="max-w-full mx-auto px-2 sm:px-4">
           {/* Mobile Header */}
           <div className="flex justify-between items-center h-14 sm:h-16 lg:hidden">
-            <div className="flex items-center space-x-2">
-              <img src="/1.png" alt="Future is Mine" className="h-6" />
-              <img src="/2.png" alt="Integrated Exploratory Mines" className="h-6" />
-              <img src="/3.png" alt="OCP SBU Mining" className="h-6" />
+            <div className="flex items-center space-x-2 flex-1 min-w-0">
+              {/* Logos */}
+              <div className="flex items-center space-x-1">
+                <img src="/1.png" alt="Future is Mine" className="h-5" />
+                <img src="/2.png" alt="Integrated Exploratory Mines" className="h-5" />
+                <img src="/3.png" alt="OCP SBU Mining" className="h-5" />
+              </div>
+              
+              {/* Title and Date */}
+              <div className="ml-2 min-w-0 flex-1">
+                <h1 className="text-sm font-bold text-white truncate">Daily Meeting Manager</h1>
+                <p className="text-xs text-blue-200">{currentDate}</p>
+              </div>
             </div>
+            
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-md hover:bg-blue-800"
+              className="p-2 rounded-md hover:bg-blue-800 flex-shrink-0"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
