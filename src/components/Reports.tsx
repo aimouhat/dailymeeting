@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Download, FileText, ExternalLink } from 'lucide-react';
 import { useActions } from '../context/ActionContext';
 import { format, isSameDay, parseISO } from 'date-fns';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { mockDataService } from '../services/mockDataService';
 
 interface Report {
@@ -45,7 +47,7 @@ const Reports: React.FC = () => {
     loadHistoricalReports();
   }, []);
 
-  const generateHTMLReport = (actions: any[], fileName: string): string => {
+  const generatePrintFriendlyHTML = (actions: any[], fileName: string): string => {
     // Filter actions for today
     const todayActionsForReport = actions.filter(action => {
       const actionDate = new Date(action.fromDate);
@@ -90,16 +92,19 @@ const Reports: React.FC = () => {
         
         body {
             font-family: 'Arial', sans-serif;
-            background: white;
-            color: #333;
+            background: white !important;
+            color: #333 !important;
             line-height: 1.6;
             padding: 20px;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
+            background: white !important;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
@@ -107,11 +112,14 @@ const Reports: React.FC = () => {
         }
         
         .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            color: white !important;
             padding: 30px;
             text-align: center;
             position: relative;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .header::before {
@@ -135,13 +143,17 @@ const Reports: React.FC = () => {
         }
         
         .logo {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.1) !important;
             padding: 10px 20px;
             border-radius: 10px;
-            border: 2px solid rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.2) !important;
             font-weight: bold;
             font-size: 12px;
             letter-spacing: 1px;
+            color: white !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .title {
@@ -151,6 +163,7 @@ const Reports: React.FC = () => {
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             position: relative;
             z-index: 2;
+            color: white !important;
         }
         
         .subtitle {
@@ -159,6 +172,7 @@ const Reports: React.FC = () => {
             margin-bottom: 5px;
             position: relative;
             z-index: 2;
+            color: white !important;
         }
         
         .date {
@@ -166,11 +180,12 @@ const Reports: React.FC = () => {
             opacity: 0.8;
             position: relative;
             z-index: 2;
+            color: white !important;
         }
         
         .content {
             padding: 40px;
-            background: white;
+            background: white !important;
         }
         
         .kpi-section {
@@ -180,7 +195,7 @@ const Reports: React.FC = () => {
         .section-title {
             font-size: 1.8em;
             font-weight: bold;
-            color: #1e3c72;
+            color: #1e3c72 !important;
             margin-bottom: 20px;
             text-align: center;
             position: relative;
@@ -194,8 +209,11 @@ const Reports: React.FC = () => {
             transform: translateX(-50%);
             width: 100px;
             height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, #667eea, #764ba2) !important;
             border-radius: 2px;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .kpi-grid {
@@ -206,14 +224,17 @@ const Reports: React.FC = () => {
         }
         
         .kpi-card {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
             border-radius: 15px;
             padding: 25px;
             text-align: center;
-            border: 2px solid #e2e8f0;
+            border: 2px solid #e2e8f0 !important;
             transition: transform 0.3s ease;
             position: relative;
             overflow: hidden;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .kpi-card::before {
@@ -223,17 +244,23 @@ const Reports: React.FC = () => {
             left: 0;
             right: 0;
             height: 4px;
-            background: var(--status-color);
+            background: var(--status-color) !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .kpi-card.total {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            color: white !important;
             grid-column: span 2;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .kpi-card.total::before {
-            background: #10B981;
+            background: #10B981 !important;
         }
         
         .kpi-label {
@@ -262,97 +289,115 @@ const Reports: React.FC = () => {
         }
         
         .actions-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+            color: white !important;
             padding: 20px;
             border-radius: 15px 15px 0 0;
             text-align: center;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .actions-count {
             font-size: 1.2em;
             margin-top: 5px;
             opacity: 0.9;
+            color: white !important;
         }
         
         .actions-table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
+            background: white !important;
             border-radius: 0 0 15px 15px;
             overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .actions-table th {
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
             padding: 15px 10px;
             text-align: left;
             font-weight: bold;
-            color: #1e3c72;
-            border-bottom: 2px solid #e2e8f0;
+            color: #1e3c72 !important;
+            border-bottom: 2px solid #e2e8f0 !important;
             font-size: 0.9em;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .actions-table td {
             padding: 15px 10px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid #f1f5f9 !important;
             vertical-align: top;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .actions-table tr:nth-child(even) {
-            background: #f8fafc;
-        }
-        
-        .actions-table tr:hover {
-            background: #e2e8f0;
+            background: #f8fafc !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .action-plan {
             font-weight: 600;
-            color: #1e3c72;
+            color: #1e3c72 !important;
             max-width: 300px;
             word-wrap: break-word;
             line-height: 1.4;
         }
         
         .tag {
-            background: #e2e8f0;
-            color: #64748b;
+            background: #e2e8f0 !important;
+            color: #64748b !important;
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 0.8em;
             font-weight: 500;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .assigned-to {
             font-weight: 500;
-            color: #475569;
+            color: #475569 !important;
         }
         
         .date-cell {
             font-family: 'Courier New', monospace;
             font-size: 0.9em;
-            color: #64748b;
+            color: #64748b !important;
         }
         
         .no-actions {
             text-align: center;
             padding: 40px;
-            color: #64748b;
+            color: #64748b !important;
             font-style: italic;
-            background: #f8fafc;
+            background: #f8fafc !important;
             border-radius: 0 0 15px 15px;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .footer {
-            background: #1e3c72;
-            color: white;
+            background: #1e3c72 !important;
+            color: white !important;
             padding: 20px;
             text-align: center;
             font-size: 0.9em;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .footer-info {
@@ -369,15 +414,18 @@ const Reports: React.FC = () => {
             height: 12px;
             border-radius: 50%;
             margin-right: 5px;
-            background: #10B981;
+            background: #10B981 !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .print-button {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #10B981;
-            color: white;
+            background: #10B981 !important;
+            color: white !important;
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
@@ -385,40 +433,114 @@ const Reports: React.FC = () => {
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
             z-index: 1000;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
         
         .print-button:hover {
-            background: #059669;
+            background: #059669 !important;
         }
         
         @media print {
             body {
-                background: white;
+                background: white !important;
                 padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             .container {
                 box-shadow: none;
                 border-radius: 0;
                 border: none;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             .kpi-grid {
                 grid-template-columns: repeat(4, 1fr);
+                page-break-inside: avoid;
+            }
+            
+            .kpi-card {
+                background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             .kpi-card.total {
                 grid-column: span 4;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .actions-table th {
+                background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
+                color: #1e3c72 !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .actions-table tr:nth-child(even) {
+                background: #f8fafc !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .actions-header {
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .footer {
+                background: #1e3c72 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             
             .print-button {
                 display: none;
             }
+            
+            .actions-section {
+                page-break-inside: avoid;
+            }
+            
+            .actions-table {
+                page-break-inside: auto;
+            }
+            
+            .actions-table tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
         }
     </style>
 </head>
 <body>
-    <button class="print-button" onclick="window.print()">🖨️ Print Report</button>
+    <button class="print-button" onclick="window.print()">🖨️ Print to PDF</button>
     
     <div class="container">
         <div class="header">
@@ -444,7 +566,7 @@ const Reports: React.FC = () => {
                     ${completeStatusStats.map(stat => `
                         <div class="kpi-card" style="--status-color: ${stat.color}">
                             <div class="kpi-label">${stat.status}</div>
-                            <div class="kpi-value" style="color: ${stat.color}">${stat.count}</div>
+                            <div class="kpi-value" style="color: ${stat.color} !important">${stat.count}</div>
                             <div class="kpi-percentage">${stat.percentage.toFixed(1)}%</div>
                         </div>
                     `).join('')}
@@ -497,6 +619,42 @@ const Reports: React.FC = () => {
             </div>
         </div>
     </div>
+    
+    <script>
+        // Auto-print instructions
+        setTimeout(() => {
+            const printInstructions = document.createElement('div');
+            printInstructions.style.cssText = \`
+                position: fixed;
+                top: 70px;
+                right: 20px;
+                background: #1e3c72;
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                font-size: 12px;
+                z-index: 1001;
+                max-width: 250px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            \`;
+            printInstructions.innerHTML = \`
+                <strong>📄 To save as PDF:</strong><br>
+                1. Press Ctrl+P (or Cmd+P on Mac)<br>
+                2. Select "Save as PDF" as destination<br>
+                3. Choose "More settings" → "Background graphics"<br>
+                4. Click Save<br><br>
+                <small>This ensures colors and styling are preserved!</small>
+            \`;
+            document.body.appendChild(printInstructions);
+            
+            // Remove instructions after 10 seconds
+            setTimeout(() => {
+                if (printInstructions.parentNode) {
+                    printInstructions.parentNode.removeChild(printInstructions);
+                }
+            }, 10000);
+        }, 1000);
+    </script>
 </body>
 </html>`;
   };
@@ -511,8 +669,8 @@ const Reports: React.FC = () => {
         isSameDay(parseISO(report.date), today)
       );
 
-      // Generate HTML content
-      const htmlContent = generateHTMLReport(actions, fileName);
+      // Generate HTML content with print-friendly styling
+      const htmlContent = generatePrintFriendlyHTML(actions, fileName);
       setReportContent(htmlContent);
       
       // Create blob and download link
