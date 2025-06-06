@@ -125,15 +125,9 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile Menu - Clean version without extra text */}
           {isMobileMenuOpen && (
             <div className="lg:hidden border-t border-blue-700 py-4 space-y-3">
-              <div className="text-center">
-                <h2 className="text-lg font-semibold text-green-400">
-                  Integrated Exploratory Mines
-                </h2>
-                <p className="text-sm text-blue-200">Daily Actions Tracking System</p>
-              </div>
               <div className="flex flex-col space-y-2">
                 <Reports />
                 <Link 
