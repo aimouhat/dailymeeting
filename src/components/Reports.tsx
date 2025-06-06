@@ -55,6 +55,7 @@ const Reports: React.FC = () => {
       const pageHeight = 297;
       const margin = 15;
       const contentWidth = pageWidth - (margin * 2);
+      const footerHeight = 20;
 
       // Function to load and convert image to base64
       const loadImageAsBase64 = async (imagePath: string): Promise<string> => {
@@ -87,11 +88,11 @@ const Reports: React.FC = () => {
         loadImageAsBase64('/3.png')
       ]);
 
-      // Header Background
+      // Header Background (ONLY on first page)
       doc.setFillColor(30, 60, 114); // Dark blue
       doc.rect(0, 0, pageWidth, 60, 'F');
 
-      // Add logos with better positioning
+      // Add logos with better positioning (ONLY on first page)
       try {
         if (logo1Base64) doc.addImage(logo1Base64, 'PNG', margin, 10, 40, 20);
         if (logo2Base64) doc.addImage(logo2Base64, 'PNG', (pageWidth/2) - 20, 10, 40, 20);
@@ -100,24 +101,24 @@ const Reports: React.FC = () => {
         console.warn('Error adding images to PDF:', imageError);
       }
 
-      // Title
+      // Title (ONLY on first page)
       doc.setFontSize(24);
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.text('DAILY MEETING REPORT', pageWidth/2, 45, { align: 'center' });
 
-      // Subtitle
+      // Subtitle (ONLY on first page)
       doc.setFontSize(12);
       doc.setTextColor(200, 220, 255);
       doc.text('INTEGRATED EXPLORATORY MINES', pageWidth/2, 52, { align: 'center' });
 
-      // Date
+      // Date (ONLY on first page)
       doc.setFontSize(10);
       doc.text(format(new Date(), 'EEEE, MMMM do, yyyy'), pageWidth/2, 57, { align: 'center' });
 
       let yPosition = 75;
 
-      // KPIs Section
+      // KPIs Section (ONLY on first page)
       doc.setFillColor(245, 247, 250);
       doc.rect(margin, yPosition, contentWidth, 50, 'F');
       doc.setDrawColor(30, 60, 114);
@@ -247,7 +248,7 @@ const Reports: React.FC = () => {
         doc.setFontSize(10);
         doc.text('ALL SYSTEMS OPERATIONAL', pageWidth/2, yPosition + 20, { align: 'center' });
       } else {
-        // Actions table with proper A4 formatting
+        // Actions table with proper A4 formatting and footer spacing
         const tableColumn = ['ACTION PLAN', 'TAGS', 'ASSIGNED TO', 'FROM', 'TO'];
         const tableRows = todayActionsForReport.map(action => [
           action.actionPlan || '',
@@ -292,7 +293,11 @@ const Reports: React.FC = () => {
             3: { cellWidth: 25, halign: 'center' }, // From Date
             4: { cellWidth: 25, halign: 'center' }, // To Date
           },
-          margin: { left: margin, right: margin },
+          margin: { 
+            left: margin, 
+            right: margin, 
+            bottom: footerHeight + 5 // Add space for footer
+          },
           pageBreak: 'auto',
           showHead: 'everyPage',
           tableWidth: 'auto',
@@ -302,39 +307,30 @@ const Reports: React.FC = () => {
             }
           },
           didDrawPage: function(data) {
-            // Add page background for continuation pages
+            // NO HEADER on continuation pages - just table content
             if (data.pageNumber > 1) {
-              // Header for continuation pages
-              doc.setFillColor(30, 60, 114);
-              doc.rect(0, 0, pageWidth, 25, 'F');
-              
-              doc.setFontSize(12);
-              doc.setTextColor(255, 255, 255);
-              doc.setFont('helvetica', 'bold');
-              doc.text('DAILY MEETING REPORT - CONTINUED', pageWidth/2, 15, { align: 'center' });
-              
-              // Borders
-              doc.setDrawColor(16, 185, 129);
-              doc.setLineWidth(1);
+              // Add minimal border for continuation pages
+              doc.setDrawColor(203, 213, 225);
+              doc.setLineWidth(0.5);
               doc.rect(5, 5, pageWidth - 10, pageHeight - 10);
             }
           }
         });
       }
 
-      // Footer on all pages
+      // Footer on all pages (but properly spaced from content)
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         
         // Footer background
         doc.setFillColor(30, 60, 114);
-        doc.rect(0, pageHeight - 20, pageWidth, 20, 'F');
+        doc.rect(0, pageHeight - footerHeight, pageWidth, footerHeight, 'F');
         
         // Footer border
         doc.setDrawColor(16, 185, 129);
         doc.setLineWidth(0.5);
-        doc.line(margin, pageHeight - 20, pageWidth - margin, pageHeight - 20);
+        doc.line(margin, pageHeight - footerHeight, pageWidth - margin, pageHeight - footerHeight);
         
         // Footer text
         doc.setFontSize(8);
