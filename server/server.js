@@ -39,8 +39,8 @@ const wss = new WebSocketServer({
   server,
   path: '/ws',
   clientTracking: true,
-  perMessageDeflate: false, // Disable compression for better performance
-  maxPayload: 1024 * 1024 // 1MB max payload
+  perMessageDeflate: false,
+  maxPayload: 1024 * 1024
 });
 
 // Store connected clients with their IP addresses
@@ -51,7 +51,9 @@ const cleanupClient = (clientIp) => {
   const ws = clients.get(clientIp);
   if (ws) {
     try {
-      ws.close();
+      if (ws.readyState === ws.OPEN) {
+        ws.close();
+      }
     } catch (error) {
       console.error('Error closing connection for client', clientIp, ':', error);
     }
@@ -61,7 +63,7 @@ const cleanupClient = (clientIp) => {
 
 // WebSocket connection handler
 wss.on('connection', (ws, req) => {
-  const clientIp = req.socket.remoteAddress;
+  const clientIp = req.socket.remoteAddress || 'unknown';
   console.log('New WebSocket connection from:', clientIp);
 
   // Check if client already has a connection
@@ -74,16 +76,20 @@ wss.on('connection', (ws, req) => {
   clients.set(clientIp, ws);
   
   // Send initial connection success message
-  ws.send(JSON.stringify({ 
-    type: 'CONNECTED', 
-    message: 'Successfully connected to WebSocket server',
-    clientCount: clients.size
-  }));
+  try {
+    ws.send(JSON.stringify({ 
+      type: 'CONNECTED', 
+      message: 'Successfully connected to WebSocket server',
+      clientCount: clients.size
+    }));
+  } catch (error) {
+    console.error('Error sending initial message:', error);
+  }
   
   // Handle client disconnection
   ws.on('close', () => {
     console.log('Client disconnected:', clientIp);
-    cleanupClient(clientIp);
+    clients.delete(clientIp);
   });
 
   // Handle client errors
@@ -99,7 +105,7 @@ wss.on('connection', (ws, req) => {
 
   // Send ping every 30 seconds to keep connection alive
   const pingInterval = setInterval(() => {
-    if (ws.readyState === WebSocketServer.OPEN) {
+    if (ws.readyState === ws.OPEN) {
       try {
         ws.ping();
       } catch (error) {
@@ -121,10 +127,10 @@ wss.on('connection', (ws, req) => {
 // Broadcast function to send updates to all connected clients
 const broadcastUpdate = (data) => {
   const message = JSON.stringify(data);
-  console.log('Broadcasting to', clients.size, 'clients:', message);
+  console.log('Broadcasting to', clients.size, 'clients:', data.type);
   
   clients.forEach((ws, clientIp) => {
-    if (ws.readyState === WebSocketServer.OPEN) {
+    if (ws.readyState === ws.OPEN) {
       try {
         ws.send(message);
       } catch (error) {
@@ -139,12 +145,22 @@ const broadcastUpdate = (data) => {
 
 async function initializeDatabase() {
   try {
-    console.log('Initializing database...');
+    console.log('Initializing SQLite database...');
+    
+    // Ensure the database directory exists
+    const dbDir = path.dirname(path.join(__dirname, 'daily_meeting.db'));
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    
     // Open database connection
     db = await open({
       filename: path.join(__dirname, 'daily_meeting.db'),
       driver: sqlite3.Database
     });
+
+    // Enable foreign keys
+    await db.exec('PRAGMA foreign_keys = ON');
 
     // Create Actions table if it doesn't exist
     await db.exec(`
@@ -159,14 +175,30 @@ async function initializeDatabase() {
         toDate TEXT NOT NULL,
         duration INTEGER NOT NULL,
         status TEXT NOT NULL,
-        comment TEXT
+        comment TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Create trigger to update updatedAt timestamp
+    await db.exec(`
+      CREATE TRIGGER IF NOT EXISTS update_actions_timestamp 
+      AFTER UPDATE ON Actions
+      BEGIN
+        UPDATE Actions SET updatedAt = CURRENT_TIMESTAMP WHERE id = NEW.id;
+      END
+    `);
     
-    console.log('Database initialized successfully');
+    console.log('✅ SQLite database initialized successfully');
+    
+    // Test the database connection
+    const testQuery = await db.get('SELECT COUNT(*) as count FROM Actions');
+    console.log(`📊 Database contains ${testQuery.count} actions`);
+    
     return true;
   } catch (err) {
-    console.error('Database initialization failed:', err);
+    console.error('❌ Database initialization failed:', err);
     return false;
   }
 }
@@ -215,9 +247,6 @@ async function checkAndUpdateActionStatuses() {
 // Run the status check every hour
 setInterval(checkAndUpdateActionStatuses, 60 * 60 * 1000);
 
-// Also run it immediately on server start
-checkAndUpdateActionStatuses();
-
 // Create the reports folder in the project root
 const REPORTS_FOLDER = path.join(process.cwd(), 'Historical Reports');
 
@@ -226,6 +255,16 @@ if (!fs.existsSync(REPORTS_FOLDER)) {
   console.log('Creating reports folder at:', REPORTS_FOLDER);
   fs.mkdirSync(REPORTS_FOLDER, { recursive: true });
 }
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    database: db ? 'Connected' : 'Disconnected',
+    websocket: wss ? 'Running' : 'Stopped'
+  });
+});
 
 // Get all reports
 app.get('/api/reports', (req, res) => {
@@ -240,7 +279,6 @@ app.get('/api/reports', (req, res) => {
         const dateMatch = file.match(/\d{4}-\d{2}-\d{2}/);
         const date = dateMatch ? dateMatch[0] : '';
         const filePath = path.join(REPORTS_FOLDER, file);
-        console.log('Processing file:', file, 'at path:', filePath);
         return {
           id: file,
           date,
@@ -250,7 +288,6 @@ app.get('/api/reports', (req, res) => {
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    console.log('Sending reports:', reports);
     res.json(reports);
   } catch (error) {
     console.error('Error reading reports:', error);
@@ -272,7 +309,6 @@ app.post('/api/reports', (req, res) => {
     const filePath = path.join(REPORTS_FOLDER, fileName);
     console.log('Saving report to:', filePath);
     
-    // Convert base64 to buffer and save
     try {
       const base64Data = pdfData.split(',')[1];
       if (!base64Data) {
@@ -315,59 +351,27 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Daily Meeting Manager API',
     version: '1.0.0',
+    status: 'Running',
     endpoints: {
+      health: 'GET /health',
       getAllActions: 'GET /api/actions',
       createAction: 'POST /api/actions',
-      updateAction: 'PUT /api/actions/:id'
+      updateAction: 'PUT /api/actions/:id',
+      deleteAction: 'DELETE /api/actions/:id',
+      getAllReports: 'GET /api/reports',
+      saveReport: 'POST /api/reports',
+      getReport: 'GET /api/reports/:filename'
     }
   });
-});
-
-// Test endpoint to add a sample action
-app.post('/api/test-action', async (req, res) => {
-  try {
-    const testAction = {
-      actionPlan: 'Test Action Plan',
-      tags: 'test',
-      area: 'Storage and handling',
-      discipline: 'Mechanical',
-      assignedTo: 'Test User',
-      fromDate: new Date().toISOString().split('T')[0],
-      toDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      duration: 7,
-      status: 'Not started',
-      comment: 'This is a test action'
-    };
-
-    const result = await db.run(`
-      INSERT INTO Actions (
-        actionPlan, tags, area, discipline, assignedTo, 
-        fromDate, toDate, duration, status, comment
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      testAction.actionPlan,
-      testAction.tags,
-      testAction.area,
-      testAction.discipline,
-      testAction.assignedTo,
-      testAction.fromDate,
-      testAction.toDate,
-      testAction.duration,
-      testAction.status,
-      testAction.comment
-    ]);
-    
-    const id = result.lastID;
-    res.status(201).json({ id, ...testAction });
-  } catch (err) {
-    console.error('Error adding test action:', err);
-    res.status(500).json({ error: 'Failed to add test action' });
-  }
 });
 
 // API Routes
 app.get('/api/actions', async (req, res) => {
   try {
+    if (!db) {
+      return res.status(500).json({ error: 'Database not initialized' });
+    }
+
     // First check and update any overdue actions
     const today = new Date().toISOString().split('T')[0];
     
@@ -403,7 +407,7 @@ app.get('/api/actions', async (req, res) => {
     res.json(actions);
   } catch (err) {
     console.error('Error fetching actions:', err);
-    res.status(500).json({ error: 'Failed to fetch actions' });
+    res.status(500).json({ error: 'Failed to fetch actions', details: err.message });
   }
 });
 
@@ -426,6 +430,10 @@ app.post('/api/actions', async (req, res) => {
   if (!actionPlan || !area || !discipline || !fromDate || !toDate || !status) {
     console.error('Missing required fields:', { actionPlan, area, discipline, fromDate, toDate, status });
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  if (!db) {
+    return res.status(500).json({ error: 'Database not initialized' });
   }
 
   try {
@@ -494,8 +502,12 @@ app.put('/api/actions/:id', async (req, res) => {
     notes 
   } = req.body;
   
+  if (!db) {
+    return res.status(500).json({ error: 'Database not initialized' });
+  }
+
   try {
-    await db.run(`
+    const result = await db.run(`
       UPDATE Actions 
       SET actionPlan = ?,
           tags = ?,
@@ -521,11 +533,23 @@ app.put('/api/actions/:id', async (req, res) => {
       notes || '',
       id
     ]);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Action not found' });
+    }
     
-    res.json({ id, ...req.body });
+    const updatedAction = { id: parseInt(id), ...req.body };
+    
+    // Broadcast the update to all connected clients
+    broadcastUpdate({
+      type: 'ACTION_UPDATED',
+      action: updatedAction
+    });
+    
+    res.json(updatedAction);
   } catch (err) {
     console.error('Error updating action:', err);
-    res.status(500).json({ error: 'Failed to update action' });
+    res.status(500).json({ error: 'Failed to update action', details: err.message });
   }
 });
 
@@ -534,6 +558,10 @@ app.delete('/api/actions/:id', async (req, res) => {
   const { id } = req.params;
   console.log('Attempting to delete action with ID:', id);
   
+  if (!db) {
+    return res.status(500).json({ error: 'Database not initialized' });
+  }
+
   try {
     // First check if the action exists
     const action = await db.get('SELECT * FROM Actions WHERE id = ?', [id]);
@@ -583,18 +611,48 @@ app.use((req, res) => {
   });
 });
 
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\n🛑 Shutting down server gracefully...');
+  
+  // Close WebSocket connections
+  wss.clients.forEach((ws) => {
+    ws.close();
+  });
+  
+  // Close database connection
+  if (db) {
+    await db.close();
+    console.log('Database connection closed');
+  }
+  
+  // Close HTTP server
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
 // Start the server
 server.listen(PORT, '0.0.0.0', async () => {
   try {
+    console.log('🚀 Starting Daily Meeting Manager Backend...');
     const dbInitialized = await initializeDatabase();
     if (!dbInitialized) {
-      console.error('Failed to initialize database. Server may not function correctly.');
+      console.error('❌ Failed to initialize database. Server may not function correctly.');
+      process.exit(1);
     }
-    console.log(`Server is running on http://0.0.0.0:${PORT}`);
-    console.log(`WebSocket server is running on ws://0.0.0.0:${PORT}/ws`);
-    console.log(`API Documentation available at http://localhost:${PORT}`);
+    
+    // Run initial status check
+    await checkAndUpdateActionStatuses();
+    
+    console.log(`✅ Server is running on http://0.0.0.0:${PORT}`);
+    console.log(`🔌 WebSocket server is running on ws://0.0.0.0:${PORT}/ws`);
+    console.log(`📚 API Documentation available at http://localhost:${PORT}`);
+    console.log(`🏥 Health check available at http://localhost:${PORT}/health`);
+    console.log('📁 Reports folder:', REPORTS_FOLDER);
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 });
