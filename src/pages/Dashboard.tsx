@@ -209,17 +209,17 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Layout - Side by side */}
+        {/* Desktop Layout - Side by side with SAME HEIGHT */}
         <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 mb-8">
           {/* Status KPIs - Takes 7 columns */}
           <div className="col-span-7">
             <StatusKPIs stats={statusStats} />
           </div>
           
-          {/* Video/Recording Section - Takes 5 columns */}
+          {/* Video/Recording Section - Takes 5 columns with EXACT SAME HEIGHT */}
           <div className="col-span-5">
-            <div className="bg-white rounded-lg shadow-md h-full">
-              <div className="flex items-center justify-between p-4 border-b">
+            <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
                 <h2 className="text-lg font-semibold">
                   {showVideo ? 'Meeting Video' : 'Voice Recording'}
                 </h2>
@@ -230,13 +230,13 @@ const Dashboard: React.FC = () => {
                   Switch to {showVideo ? 'Recording' : 'Video'}
                 </button>
               </div>
-              <div className="p-4 h-[calc(100%-4rem)]">
+              <div className="p-4 flex-1 flex flex-col justify-center">
                 {showVideo ? (
-                  <div className="h-full">
+                  <div className="h-full flex items-center justify-center">
                     <VideoPlayer folderPath="/videos" />
                   </div>
                 ) : (
-                  <div className="space-y-4 h-full">
+                  <div className="space-y-4 h-full flex flex-col justify-center">
                     <AudioRecorder onTranscriptionComplete={handleTranscriptionComplete} />
                     {transcribedText && (
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg">
