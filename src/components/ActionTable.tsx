@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { ChevronDown, ChevronUp, Circle, Edit2, Check, X, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Circle, Edit2, Check, X, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Action } from '../types/action';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -18,6 +18,16 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingAction, setEditingAction] = useState<Partial<Action>>({});
   const [error, setError] = useState<string | null>(null);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSort = (field: keyof Action) => {
     if (sortField === field) {
@@ -44,7 +54,6 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     if (!editingId) return;
 
     try {
-      // Calculate duration if dates are changed
       if (editingAction.fromDate && editingAction.toDate) {
         const fromDate = new Date(editingAction.fromDate);
         const toDate = new Date(editingAction.toDate);
@@ -65,7 +74,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
 
   const handleDelete = async (id: number) => {
     const password = prompt('Please enter password to delete this action:');
-    if (!password) return; // User cancelled the prompt
+    if (!password) return;
     
     if (password !== 'aimht') {
       setError('Incorrect password. Please try again.');
@@ -78,7 +87,6 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
       await deleteAction(id);
       setError(null);
       
-      // Notify parent component about the deletion
       if (onActionDeleted) {
         onActionDeleted(id);
       }
@@ -94,6 +102,16 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
       ...prev,
       [field]: value
     }));
+  };
+
+  const toggleRowExpansion = (id: number) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedRows(newExpanded);
   };
 
   const sortedActions = [...actions].sort((a, b) => {
@@ -132,6 +150,109 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     return sortDirection === 'asc' ? <ChevronUp className="inline w-4 h-4" /> : <ChevronDown className="inline w-4 h-4" />;
   };
 
+  // Mobile Card View
+  if (isMobileView) {
+    return (
+      <div className="space-y-3">
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <X className="h-5 w-5 text-red-500" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {sortedActions.map((action) => (
+          <div key={action.id} className="bg-white rounded-lg shadow-md border border-gray-200">
+            {/* Card Header */}
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                    {action.actionPlan}
+                  </h3>
+                  <div className="flex items-center mt-1">
+                    <Circle className={`w-3 h-3 mr-2 ${getStatusColor(action.status)}`} />
+                    <span className="text-xs text-gray-600">{action.status}</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 ml-2">
+                  <button
+                    onClick={() => toggleRowExpansion(action.id)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    {expandedRows.has(action.id) ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => startEditing(action)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(action.id)}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Card Content */}
+            <div className="p-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gray-500">Area:</span>
+                  <p className="font-medium">{action.area}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Discipline:</span>
+                  <p className="font-medium">{action.discipline}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">From:</span>
+                  <p className="font-medium">{format(new Date(action.fromDate), 'dd/MM/yyyy')}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">To:</span>
+                  <p className="font-medium">{format(new Date(action.toDate), 'dd/MM/yyyy')}</p>
+                </div>
+              </div>
+
+              {expandedRows.has(action.id) && (
+                <div className="space-y-3 pt-3 border-t border-gray-100">
+                  <div>
+                    <span className="text-gray-500 text-sm">Assigned To:</span>
+                    <p className="font-medium">{action.assignedTo || 'Not assigned'}</p>
+                  </div>
+                  {action.tags && (
+                    <div>
+                      <span className="text-gray-500 text-sm">Tags:</span>
+                      <p className="font-medium">{action.tags}</p>
+                    </div>
+                  )}
+                  {action.notes && (
+                    <div>
+                      <span className="text-gray-500 text-sm">Notes:</span>
+                      <p className="font-medium">{action.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Desktop Table View
   return (
     <div className="overflow-x-auto shadow-md rounded-lg bg-white">
       <div className="max-h-[820px] overflow-y-auto">

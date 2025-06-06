@@ -43,25 +43,27 @@ const StatusKPIs: React.FC<StatusKPIsProps> = ({ stats }) => {
   const totalActions = stats.reduce((sum, stat) => sum + stat.count, 0);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">Action Status KPIs</h3>
-        <div className="text-right">
-          <div className="text-sm text-gray-600">Total Actions</div>
-          <div className="text-2xl font-bold text-blue-600">{totalActions}</div>
+    <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-2 sm:space-y-0">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900">Action Status KPIs</h3>
+        <div className="text-left sm:text-right">
+          <div className="text-xs sm:text-sm text-gray-600">Total Actions</div>
+          <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalActions}</div>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-4">
+      
+      {/* Mobile: 2x2 Grid, Desktop: 1x4 Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {completeStats.map((stat) => (
-          <div key={stat.status} className="text-center">
+          <div key={stat.status} className="text-center p-3 sm:p-0">
             <div className="flex items-center justify-center mb-2">
               <div className={`w-3 h-3 rounded-full ${getStatusColor(stat.status)} mr-2`}></div>
-              <span className="text-sm font-medium text-gray-600">{stat.status}</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-600 truncate">{stat.status}</span>
             </div>
-            <div className="text-2xl font-bold" style={{ color: stat.color }}>
+            <div className="text-lg sm:text-2xl font-bold" style={{ color: stat.color }}>
               {stat.percentage.toFixed(1)}%
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-xs sm:text-sm text-gray-500">
               {stat.count} actions
             </div>
           </div>
