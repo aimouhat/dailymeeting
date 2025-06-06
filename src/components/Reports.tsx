@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, FileText, ExternalLink } from 'lucide-react';
 import { useActions } from '../context/ActionContext';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { mockDataService } from '../services/mockDataService';
@@ -17,6 +17,8 @@ const Reports: React.FC = () => {
   const [historicalReports, setHistoricalReports] = useState<Report[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showReportPreview, setShowReportPreview] = useState(false);
+  const [reportContent, setReportContent] = useState('');
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -78,7 +80,7 @@ const Reports: React.FC = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Meeting Report</title>
+    <title>Daily Meeting Report - ${format(new Date(), 'yyyy-MM-dd')}</title>
     <style>
         * {
             margin: 0;
@@ -370,6 +372,25 @@ const Reports: React.FC = () => {
             background: #10B981;
         }
         
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+        
+        .print-button:hover {
+            background: #059669;
+        }
+        
         @media print {
             body {
                 background: white;
@@ -389,10 +410,16 @@ const Reports: React.FC = () => {
             .kpi-card.total {
                 grid-column: span 4;
             }
+            
+            .print-button {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <button class="print-button" onclick="window.print()">🖨️ Print Report</button>
+    
     <div class="container">
         <div class="header">
             <div class="logos">
@@ -478,7 +505,7 @@ const Reports: React.FC = () => {
     try {
       setIsGenerating(true);
       const today = new Date();
-      const fileName = `Daily Meeting Report ${format(today, 'yyyy-MM-dd')}.pdf`;
+      const fileName = `Daily Meeting Report ${format(today, 'yyyy-MM-dd')}.html`;
 
       const existingReportIndex = historicalReports.findIndex(report =>
         isSameDay(parseISO(report.date), today)
@@ -486,21 +513,36 @@ const Reports: React.FC = () => {
 
       // Generate HTML content
       const htmlContent = generateHTMLReport(actions, fileName);
+      setReportContent(htmlContent);
       
-      // Create a new window to display and print the report
-      const printWindow = window.open('', '_blank', 'width=1200,height=800');
-      if (printWindow) {
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        
-        // Wait for content to load then focus the window
-        printWindow.onload = () => {
+      // Create blob and download link
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Also try to open in new window
+      try {
+        const printWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
           printWindow.focus();
-        };
+        }
+      } catch (popupError) {
+        console.log('Popup blocked, but file was downloaded');
+        setShowReportPreview(true);
       }
 
       // Save to mock service
-      const pdfData = 'data:application/pdf;base64,' + btoa(htmlContent);
+      const pdfData = 'data:text/html;base64,' + btoa(htmlContent);
       await mockDataService.saveReport({ fileName, pdfData });
 
       const newReport: Report = {
@@ -533,6 +575,17 @@ const Reports: React.FC = () => {
     } catch (error) {
       console.error('Error downloading report:', error);
       alert('Failed to download the report. Please try again.');
+    }
+  };
+
+  const openReportPreview = () => {
+    if (reportContent) {
+      const printWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+      if (printWindow) {
+        printWindow.document.write(reportContent);
+        printWindow.document.close();
+        printWindow.focus();
+      }
     }
   };
 
@@ -579,14 +632,27 @@ const Reports: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={generateReport}
-                  disabled={isGenerating}
-                  className={`w-full mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:from-green-600 hover:to-green-700 transition-all duration-200 ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <Download className="w-5 h-5" />
-                  <span>{isGenerating ? 'Generating...' : 'Generate Daily Meeting Report'}</span>
-                </button>
+                
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={generateReport}
+                    disabled={isGenerating}
+                    className={`flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:from-green-600 hover:to-green-700 transition-all duration-200 ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>{isGenerating ? 'Generating...' : 'Generate Report'}</span>
+                  </button>
+                  
+                  {reportContent && (
+                    <button
+                      onClick={openReportPreview}
+                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-all duration-200"
+                      title="Open last generated report"
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="bg-white rounded-xl shadow-md p-5">
