@@ -209,16 +209,15 @@ const Reports: React.FC = () => {
         doc.setTextColor(107, 114, 128);
         doc.setFont('helvetica', 'italic');
         doc.text('No actions scheduled for today', 105, yPosition + 10, { align: 'center' });
-        yPosition += 30;
       } else {
-        // Add actions table with modern styling and pagination support
-        const tableColumn = ['Action Plan', 'Area', 'Discipline', 'Assigned To', 'Status'];
+        // Add actions table with only the requested columns
+        const tableColumn = ['Action Plan', 'Tags', 'Assigned To', 'From', 'To'];
         const tableRows = todayActionsForReport.map(action => [
-          action.actionPlan.length > 60 ? action.actionPlan.substring(0, 57) + '...' : action.actionPlan,
-          action.area,
-          action.discipline,
+          action.actionPlan, // Full action plan text - no truncation
+          action.tags || '',
           action.assignedTo || 'Not assigned',
-          action.status,
+          format(new Date(action.fromDate), 'dd/MM/yyyy'),
+          format(new Date(action.toDate), 'dd/MM/yyyy'),
         ]);
 
         autoTable(doc, {
@@ -227,60 +226,45 @@ const Reports: React.FC = () => {
           startY: yPosition,
           theme: 'grid',
           styles: {
-            fontSize: 8,
-            cellPadding: 2,
+            fontSize: 9,
+            cellPadding: 3,
             lineColor: [34, 197, 94],
             textColor: 60,
             lineWidth: 0.1,
-            overflow: 'linebreak',
-            cellWidth: 'wrap'
+            overflow: 'linebreak', // Allow text to wrap to new lines
+            cellWidth: 'wrap',
+            valign: 'top' // Align text to top of cell
           },
           headStyles: {
             fillColor: [34, 197, 94],
             textColor: 255,
-            fontSize: 9,
+            fontSize: 10,
             fontStyle: 'bold',
             halign: 'center',
+            valign: 'middle'
           },
           alternateRowStyles: {
             fillColor: [245, 247, 250],
           },
           columnStyles: {
-            0: { cellWidth: 70 }, // Action Plan - wider for better text wrapping
-            1: { cellWidth: 25 }, // Area
-            2: { cellWidth: 25 }, // Discipline
-            3: { cellWidth: 30 }, // Assigned To
-            4: { cellWidth: 20 }, // Status
+            0: { cellWidth: 80 }, // Action Plan - much wider for full text
+            1: { cellWidth: 30 }, // Tags
+            2: { cellWidth: 40 }, // Assigned To
+            3: { cellWidth: 20 }, // From Date
+            4: { cellWidth: 20 }, // To Date
           },
-          margin: { left: 20, right: 20 },
+          margin: { left: 10, right: 10 },
           pageBreak: 'auto', // Enable automatic page breaks
           showHead: 'everyPage', // Show header on every page
+          tableWidth: 'auto',
+          // Increase row height to accommodate wrapped text
+          didParseCell: function(data) {
+            if (data.column.index === 0) { // Action Plan column
+              data.cell.styles.minCellHeight = 15; // Minimum height for action plan cells
+            }
+          }
         });
-
-        // Get the final Y position after the table
-        yPosition = (doc as any).lastAutoTable.finalY + 10;
       }
-
-      // Add summary section at the bottom
-      // Check if we need a new page for the summary
-      if (yPosition > 250) {
-        doc.addPage();
-        yPosition = 30;
-      }
-      
-      // Summary box
-      doc.setFillColor(248, 250, 252);
-      doc.rect(20, yPosition, 170, 30, 'F');
-      doc.setDrawColor(203, 213, 225);
-      doc.rect(20, yPosition, 170, 30);
-      
-      doc.setFontSize(10);
-      doc.setTextColor(71, 85, 105);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Summary:', 25, yPosition + 8);
-      doc.text(`• Total Actions in System: ${actions.length}`, 25, yPosition + 16);
-      doc.text(`• Actions for Today: ${todayActionsForReport.length}`, 25, yPosition + 22);
-      doc.text(`• Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 25, yPosition + 28);
 
       // Add footer with page number on all pages
       const pageCount = doc.getNumberOfPages();
