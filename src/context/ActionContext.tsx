@@ -42,7 +42,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
         setError(null);
         const data = await mockDataService.getAllActions();
         setActions(data);
-        setFilteredActions(data);
+        
+        // Apply auto-filter by default (exclude "Done" actions)
+        const autoFiltered = data.filter(action => action.status !== 'Done');
+        setFilteredActions(autoFiltered);
+        
         calculateStats(data);
         setLastUpdated(new Date());
       } catch (err) {
@@ -71,7 +75,19 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
         calculateStats(newActions);
         return newActions;
       });
-      setFilteredActions(prev => [...prev, action]);
+      
+      // Only add to filtered actions if it's not "Done" (for auto-filter)
+      setFilteredActions(prev => {
+        // Check if we're currently auto-filtering (if filtered actions don't include "Done" actions)
+        const hasCompletedActions = prev.some(a => a.status === 'Done');
+        if (!hasCompletedActions && action.status !== 'Done') {
+          return [...prev, action];
+        } else if (hasCompletedActions) {
+          return [...prev, action];
+        }
+        return prev;
+      });
+      
       setLastUpdated(new Date());
     };
 
@@ -147,7 +163,18 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
         calculateStats(updatedActions);
         return updatedActions;
       });
-      setFilteredActions(prev => [...prev, newAction]);
+      
+      // Only add to filtered actions if it matches current filter
+      setFilteredActions(prev => {
+        const hasCompletedActions = prev.some(a => a.status === 'Done');
+        if (!hasCompletedActions && newAction.status !== 'Done') {
+          return [...prev, newAction];
+        } else if (hasCompletedActions) {
+          return [...prev, newAction];
+        }
+        return prev;
+      });
+      
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Error adding action:', err);
@@ -204,9 +231,19 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     }
 
-    if (filters.status) {
+    // Handle auto-filter (exclude "Done" actions) vs specific status filter
+    if (filters.status === 'auto-filter') {
+      // Auto-filter: show Not started, In Progress, and Delay only
+      filtered = filtered.filter(action => 
+        action.status === 'Not started' || 
+        action.status === 'In Progress' || 
+        action.status === 'Delay'
+      );
+    } else if (filters.status && filters.status !== '') {
+      // Specific status filter
       filtered = filtered.filter(action => action.status === filters.status);
     }
+    // If status is empty string, show all statuses (no filtering)
 
     if (filters.area) {
       filtered = filtered.filter(action => action.area === filters.area);

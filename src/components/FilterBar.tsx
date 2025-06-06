@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Search, Calendar, Filter, X } from 'lucide-react';
@@ -17,14 +17,21 @@ const FilterBar: React.FC<FilterBarProps> = ({ onFilter, areas }) => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('auto-filter'); // Default to auto-filter
   const [area, setArea] = useState('');
 
+  // Apply auto-filter on component mount
+  useEffect(() => {
+    handleFilter();
+  }, []);
+
   const handleFilter = () => {
+    // If auto-filter is selected, we'll handle this in the parent component
+    // by filtering out "Done" status
     onFilter({
       dateRange: { start: startDate, end: endDate },
       searchTerm,
-      status,
+      status: status === 'auto-filter' ? 'auto-filter' : status,
       area
     });
   };
@@ -33,12 +40,12 @@ const FilterBar: React.FC<FilterBarProps> = ({ onFilter, areas }) => {
     setStartDate(null);
     setEndDate(null);
     setSearchTerm('');
-    setStatus('');
+    setStatus('auto-filter'); // Reset to auto-filter
     setArea('');
     onFilter({
       dateRange: { start: null, end: null },
       searchTerm: '',
-      status: '',
+      status: 'auto-filter',
       area: ''
     });
   };
@@ -100,7 +107,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ onFilter, areas }) => {
           </div>
         </div>
 
-        <div className="relative min-w-[150px]">
+        <div className="relative min-w-[180px]">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Filter className="h-4 w-4 text-gray-400" />
           </div>
@@ -109,11 +116,12 @@ const FilterBar: React.FC<FilterBarProps> = ({ onFilter, areas }) => {
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
+            <option value="auto-filter" className="bg-blue-900">Active Actions Only</option>
             <option value="" className="bg-blue-900">All Statuses</option>
-            <option value="Done" className="bg-blue-900">Done</option>
+            <option value="Not started" className="bg-blue-900">Not started</option>
             <option value="In Progress" className="bg-blue-900">In Progress</option>
             <option value="Delay" className="bg-blue-900">Delay</option>
-            <option value="Not started" className="bg-blue-900">Not started</option>
+            <option value="Done" className="bg-blue-900">Done</option>
           </select>
         </div>
 
