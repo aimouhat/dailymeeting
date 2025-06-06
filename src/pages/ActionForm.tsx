@@ -133,22 +133,14 @@ const ActionForm: React.FC = () => {
       {/* Main Content */}
       <main className="flex-grow w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Page Title */}
+          {/* Page Title - Simplified */}
           <div className="text-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full mb-4">
-              <PlusCircle className="w-8 h-8 text-white" />
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Add New Action</h1>
             <p className="text-gray-600">Create a new action item for the daily meeting</p>
           </div>
 
           {/* Form Container */}
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-green-50 px-4 sm:px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Action Details</h2>
-              <p className="text-sm text-gray-600 mt-1">Fill in the information below to create a new action item</p>
-            </div>
-
             <div className="p-4 sm:p-6">
               {successMessage && (
                 <div className="mb-4 sm:mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-3">
