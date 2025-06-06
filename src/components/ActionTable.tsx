@@ -5,7 +5,6 @@ import { Action } from '../types/action';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useActions } from '../context/ActionContext';
-import { API_URL } from '../config';
 
 interface ActionTableProps {
   actions: Action[];
@@ -13,7 +12,7 @@ interface ActionTableProps {
 }
 
 const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) => {
-  const { updateAction } = useActions();
+  const { updateAction, deleteAction } = useActions();
   const [sortField, setSortField] = useState<keyof Action>('fromDate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -76,22 +75,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     if (!window.confirm('Are you sure you want to delete this action?')) return;
 
     try {
-      console.log('Attempting to delete action:', id);
-      const response = await fetch(`${API_URL}/actions/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        console.error('Delete failed:', data);
-        throw new Error(data.error || 'Failed to delete action');
-      }
-
-      console.log('Delete successful:', data);
+      await deleteAction(id);
       setError(null);
       
       // Notify parent component about the deletion
@@ -302,9 +286,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
                       <option value="Storage and handling">Storage and handling</option>
                       <option value="Washing">Washing</option>
                       <option value="Flotation">Flotation</option>
-                      <option value="Tailing Management">Tailing Management</option>
                       <option value="Utilities">Utilities</option>
-                      <option value="Digitization">Digitization</option>
                       <option value="BWP">BWP</option>
                     </select>
                   ) : (
@@ -318,7 +300,6 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
                       onChange={(e) => handleEditChange('discipline', e.target.value)}
                       className="w-full px-3 py-2 border rounded text-base"
                     >
-                      <option value="All">All</option>
                       <option value="Automation">Automation</option>
                       <option value="Mechanical">Mechanical</option>
                       <option value="Electrical">Electrical</option>

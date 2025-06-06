@@ -4,7 +4,7 @@ import { useActions } from '../context/ActionContext';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { getHistoricalReports, saveReport } from '../api/reports';
+import { mockDataService } from '../services/mockDataService';
 
 interface Report {
   id: string;
@@ -12,8 +12,6 @@ interface Report {
   fileName: string;
   filePath: string;
 }
-
-const REPORTS_FOLDER = 'Historical Reports';
 
 const Reports: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,8 +35,7 @@ const Reports: React.FC = () => {
     const loadHistoricalReports = async () => {
       try {
         setIsLoading(true);
-        const reports = await getHistoricalReports();
-        console.log('Loaded historical reports:', reports);
+        const reports = await mockDataService.getAllReports();
         setHistoricalReports(reports);
       } catch (error) {
         console.error('Error loading historical reports:', error);
@@ -62,7 +59,6 @@ const Reports: React.FC = () => {
       // Function to load and convert image to base64
       const loadImageAsBase64 = async (imagePath: string): Promise<string> => {
         try {
-          console.log('Loading image:', imagePath);
           const response = await fetch(imagePath);
           if (!response.ok) {
             throw new Error(`Failed to load image: ${response.statusText}`);
@@ -81,7 +77,6 @@ const Reports: React.FC = () => {
       };
 
       // Load all three logos
-      console.log('Loading logos...');
       const [logo1Base64, logo2Base64, logo3Base64] = await Promise.all([
         loadImageAsBase64('/1.png'),
         loadImageAsBase64('/2.png'),
@@ -146,7 +141,6 @@ const Reports: React.FC = () => {
         action.status,
       ]);
 
-      console.log('Adding table with rows:', tableRows);
       autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
@@ -181,19 +175,12 @@ const Reports: React.FC = () => {
         doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
       }
 
-      console.log('Generating PDF data...');
       const pdfData = doc.output('datauristring');
-      console.log('Saving report...');
-      await saveReport({ fileName, pdfData });
-      console.log('Report saved successfully');
+      await mockDataService.saveReport({ fileName, pdfData });
       doc.save(fileName);
       return true;
     } catch (error) {
       console.error('Error generating PDF:', error);
-      if (error instanceof Error) {
-        console.error('Error details:', error.message);
-        console.error('Error stack:', error.stack);
-      }
       return false;
     }
   };
@@ -203,7 +190,6 @@ const Reports: React.FC = () => {
       setIsGenerating(true);
       const today = new Date();
       const fileName = `Daily Meeting Report ${format(today, 'yyyy-MM-dd')}.pdf`;
-      const filePath = `${REPORTS_FOLDER}/${fileName}`;
 
       const existingReportIndex = historicalReports.findIndex(report =>
         isSameDay(parseISO(report.date), today)
@@ -216,7 +202,7 @@ const Reports: React.FC = () => {
           id: fileName,
           date: format(today, 'yyyy-MM-dd'),
           fileName,
-          filePath,
+          filePath: `Historical Reports/${fileName}`,
         };
 
         let updatedReports;
@@ -240,12 +226,8 @@ const Reports: React.FC = () => {
 
   const downloadReport = (report: Report) => {
     try {
-      const link = document.createElement('a');
-      link.href = `http://localhost:3001/api/reports/${report.fileName}`;
-      link.download = report.fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Since we're using static data, we'll just show a message
+      alert(`In a real application, this would download: ${report.fileName}`);
     } catch (error) {
       console.error('Error downloading report:', error);
       alert('Failed to download the report. Please try again.');
