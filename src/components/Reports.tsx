@@ -19,7 +19,6 @@ const Reports: React.FC = () => {
   const [historicalReports, setHistoricalReports] = useState<Report[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -39,7 +38,6 @@ const Reports: React.FC = () => {
         setHistoricalReports(reports);
       } catch (error) {
         console.error('Error loading historical reports:', error);
-        setError('Failed to load historical reports. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -56,37 +54,6 @@ const Reports: React.FC = () => {
       doc.setFillColor(15, 23, 42); // slate-900
       doc.rect(0, 0, 210, 297, 'F');
 
-      // Function to load and convert image to base64
-      const loadImageAsBase64 = async (imagePath: string): Promise<string> => {
-        try {
-          const response = await fetch(imagePath);
-          if (!response.ok) {
-            console.warn(`Failed to load image: ${imagePath}`);
-            return '';
-          }
-          const blob = await response.blob();
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = () => {
-              console.warn(`Error reading image: ${imagePath}`);
-              resolve('');
-            };
-            reader.readAsDataURL(blob);
-          });
-        } catch (error) {
-          console.warn(`Error loading image ${imagePath}:`, error);
-          return '';
-        }
-      };
-
-      // Load all three logos with error handling
-      const [logo1Base64, logo2Base64, logo3Base64] = await Promise.all([
-        loadImageAsBase64('/1.png'),
-        loadImageAsBase64('/2.png'),
-        loadImageAsBase64('/3.png')
-      ]);
-
       // Add futuristic header background
       doc.setFillColor(30, 41, 59); // slate-800
       doc.rect(0, 0, 210, 50, 'F');
@@ -101,14 +68,13 @@ const Reports: React.FC = () => {
       doc.setLineWidth(0.5);
       doc.rect(8, 8, 194, 281);
 
-      // Add logos with better positioning and error handling
-      try {
-        if (logo1Base64) doc.addImage(logo1Base64, 'PNG', 15, 12, 30, 16);
-        if (logo2Base64) doc.addImage(logo2Base64, 'PNG', 90, 12, 30, 16);
-        if (logo3Base64) doc.addImage(logo3Base64, 'PNG', 165, 12, 30, 16);
-      } catch (imageError) {
-        console.warn('Error adding images to PDF:', imageError);
-      }
+      // Add company logos as text placeholders (more reliable than images)
+      doc.setFontSize(10);
+      doc.setTextColor(34, 197, 94);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FUTURE IS MINE', 15, 20);
+      doc.text('INTEGRATED MINES', 90, 20);
+      doc.text('OCP GROUP', 165, 20);
 
       // Add futuristic title with gradient effect simulation
       doc.setFontSize(28);
@@ -270,7 +236,7 @@ const Reports: React.FC = () => {
         // Add actions table with futuristic styling
         const tableColumn = ['ACTION PLAN', 'TAGS', 'ASSIGNED TO', 'FROM', 'TO'];
         const tableRows = todayActionsForReport.map(action => [
-          action.actionPlan || '',
+          action.actionPlan,
           action.tags || '-',
           action.assignedTo || 'UNASSIGNED',
           format(new Date(action.fromDate), 'dd/MM/yyyy'),
@@ -370,28 +336,20 @@ const Reports: React.FC = () => {
         doc.text('ONLINE', 195, 285, { align: 'right' });
       }
 
-      // Save the PDF and handle the data
-      try {
-        const pdfData = doc.output('datauristring');
-        await mockDataService.saveReport({ fileName, pdfData });
-        doc.save(fileName);
-        return true;
-      } catch (saveError) {
-        console.error('Error saving PDF:', saveError);
-        // Still try to download even if save fails
-        doc.save(fileName);
-        return true;
-      }
+      // Save the PDF
+      const pdfData = doc.output('datauristring');
+      await mockDataService.saveReport({ fileName, pdfData });
+      doc.save(fileName);
+      return true;
     } catch (error) {
       console.error('Error generating futuristic PDF:', error);
-      throw error;
+      return false;
     }
   };
 
   const generateReport = async () => {
     try {
       setIsGenerating(true);
-      setError(null);
       const today = new Date();
       const fileName = `Daily Meeting Report ${format(today, 'yyyy-MM-dd')}.pdf`;
 
@@ -417,10 +375,13 @@ const Reports: React.FC = () => {
           updatedReports = [newReport, ...historicalReports];
         }
         setHistoricalReports(updatedReports);
+        alert('PDF report generated successfully!');
+      } else {
+        alert('Failed to generate PDF. Please try again.');
       }
     } catch (error) {
       console.error('Error in generateReport:', error);
-      setError('Failed to generate PDF. Please try again.');
+      alert('An error occurred while generating the report.');
     } finally {
       setIsGenerating(false);
     }
@@ -479,11 +440,6 @@ const Reports: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {error && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                    {error}
-                  </div>
-                )}
                 <button
                   onClick={generateReport}
                   disabled={isGenerating}
@@ -502,8 +458,6 @@ const Reports: React.FC = () => {
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500"></div>
                       <span className="ml-2 text-sm text-gray-500">Loading reports...</span>
                     </div>
-                  ) : error ? (
-                    <div className="text-sm text-red-500 text-center py-4">{error}</div>
                   ) : historicalReports.length > 0 ? (
                     historicalReports.map((report) => (
                       <div key={report.id} className="flex items-center justify-between p-2 hover:bg-slate-100 rounded-lg">
