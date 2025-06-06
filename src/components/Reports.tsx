@@ -127,13 +127,32 @@ const Reports: React.FC = () => {
       doc.text(actions.length.toString(), 105, yPosition, { align: 'center' });
       yPosition += 20;
 
+      // Ensure all 4 status types are shown
+      const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
+      const statusColors = {
+        'Done': '#10B981',
+        'In Progress': '#3B82F6',
+        'Delay': '#F59E0B',
+        'Not started': '#EF4444'
+      };
+
+      const completeStatusStats = allStatusTypes.map(status => {
+        const existingStat = statusStats.find(s => s.status === status);
+        return existingStat || {
+          status,
+          count: 0,
+          percentage: 0,
+          color: statusColors[status as keyof typeof statusColors]
+        };
+      });
+
       // KPI Cards in a row
       const cardWidth = 40;
       const cardHeight = 25;
       const startX = 25;
       const cardSpacing = 5;
 
-      statusStats.forEach((stat, index) => {
+      completeStatusStats.forEach((stat, index) => {
         const cardX = startX + (index * (cardWidth + cardSpacing));
         
         // Card background
@@ -171,13 +190,6 @@ const Reports: React.FC = () => {
       doc.line(20, yPosition, 190, yPosition);
       yPosition += 10;
 
-      // Today's Actions Header
-      doc.setFontSize(16);
-      doc.setTextColor(34, 197, 94);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Today's Actions (${format(new Date(), 'dd MMM yyyy')})`, 105, yPosition, { align: 'center' });
-      yPosition += 15;
-
       // Filter actions for today
       const todayActionsForReport = actions.filter(action => {
         const actionDate = new Date(action.fromDate);
@@ -185,16 +197,24 @@ const Reports: React.FC = () => {
         return actionDate.toDateString() === today.toDateString();
       });
 
+      // Today's Actions Header with count
+      doc.setFontSize(16);
+      doc.setTextColor(34, 197, 94);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Today's Actions (${todayActionsForReport.length} actions) - ${format(new Date(), 'dd MMM yyyy')}`, 105, yPosition, { align: 'center' });
+      yPosition += 15;
+
       if (todayActionsForReport.length === 0) {
         doc.setFontSize(12);
         doc.setTextColor(107, 114, 128);
         doc.setFont('helvetica', 'italic');
         doc.text('No actions scheduled for today', 105, yPosition + 10, { align: 'center' });
+        yPosition += 30;
       } else {
-        // Add actions table with modern styling
+        // Add actions table with modern styling and pagination support
         const tableColumn = ['Action Plan', 'Area', 'Discipline', 'Assigned To', 'Status'];
         const tableRows = todayActionsForReport.map(action => [
-          action.actionPlan.length > 50 ? action.actionPlan.substring(0, 47) + '...' : action.actionPlan,
+          action.actionPlan.length > 60 ? action.actionPlan.substring(0, 57) + '...' : action.actionPlan,
           action.area,
           action.discipline,
           action.assignedTo || 'Not assigned',
@@ -207,16 +227,18 @@ const Reports: React.FC = () => {
           startY: yPosition,
           theme: 'grid',
           styles: {
-            fontSize: 9,
-            cellPadding: 3,
+            fontSize: 8,
+            cellPadding: 2,
             lineColor: [34, 197, 94],
             textColor: 60,
             lineWidth: 0.1,
+            overflow: 'linebreak',
+            cellWidth: 'wrap'
           },
           headStyles: {
             fillColor: [34, 197, 94],
             textColor: 255,
-            fontSize: 10,
+            fontSize: 9,
             fontStyle: 'bold',
             halign: 'center',
           },
@@ -224,34 +246,44 @@ const Reports: React.FC = () => {
             fillColor: [245, 247, 250],
           },
           columnStyles: {
-            0: { cellWidth: 60 }, // Action Plan
-            1: { cellWidth: 30 }, // Area
-            2: { cellWidth: 30 }, // Discipline
-            3: { cellWidth: 35 }, // Assigned To
-            4: { cellWidth: 25 }, // Status
+            0: { cellWidth: 70 }, // Action Plan - wider for better text wrapping
+            1: { cellWidth: 25 }, // Area
+            2: { cellWidth: 25 }, // Discipline
+            3: { cellWidth: 30 }, // Assigned To
+            4: { cellWidth: 20 }, // Status
           },
           margin: { left: 20, right: 20 },
+          pageBreak: 'auto', // Enable automatic page breaks
+          showHead: 'everyPage', // Show header on every page
         });
+
+        // Get the final Y position after the table
+        yPosition = (doc as any).lastAutoTable.finalY + 10;
       }
 
-      // Add summary section at the bottom - Fixed with optional chaining
-      const finalY = (doc as any).lastAutoTable?.finalY || yPosition + 30;
+      // Add summary section at the bottom
+      // Check if we need a new page for the summary
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 30;
+      }
       
       // Summary box
       doc.setFillColor(248, 250, 252);
-      doc.rect(20, finalY + 10, 170, 25, 'F');
+      doc.rect(20, yPosition, 170, 30, 'F');
       doc.setDrawColor(203, 213, 225);
-      doc.rect(20, finalY + 10, 170, 25);
+      doc.rect(20, yPosition, 170, 30);
       
       doc.setFontSize(10);
       doc.setTextColor(71, 85, 105);
       doc.setFont('helvetica', 'normal');
-      doc.text('Summary:', 25, finalY + 18);
-      doc.text(`• Total Actions in System: ${actions.length}`, 25, finalY + 24);
-      doc.text(`• Actions for Today: ${todayActionsForReport.length}`, 25, finalY + 30);
+      doc.text('Summary:', 25, yPosition + 8);
+      doc.text(`• Total Actions in System: ${actions.length}`, 25, yPosition + 16);
+      doc.text(`• Actions for Today: ${todayActionsForReport.length}`, 25, yPosition + 22);
+      doc.text(`• Report Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 25, yPosition + 28);
 
-      // Add footer with page number
-      const pageCount = (doc as any).internal.pages.length - 1;
+      // Add footer with page number on all pages
+      const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setFontSize(8);

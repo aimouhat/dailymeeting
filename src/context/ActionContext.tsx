@@ -131,7 +131,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       percentage: (count / actions.length) * 100
     }));
 
-    // Calculate status stats with colors
+    // Calculate status stats with colors - ensure all 4 statuses are included
     const statusColors = {
       'Done': '#10B981',
       'In Progress': '#3B82F6',
@@ -144,10 +144,12 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       return acc;
     }, {} as Record<string, number>);
 
-    const statusStats = Object.entries(statusCounts).map(([status, count]) => ({
+    // Ensure all 4 status types are included, even if count is 0
+    const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
+    const statusStats = allStatusTypes.map(status => ({
       status,
-      count,
-      percentage: (count / actions.length) * 100,
+      count: statusCounts[status] || 0,
+      percentage: actions.length > 0 ? ((statusCounts[status] || 0) / actions.length) * 100 : 0,
       color: statusColors[status as keyof typeof statusColors] || '#6B7280'
     }));
 

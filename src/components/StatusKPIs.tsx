@@ -21,6 +21,25 @@ const StatusKPIs: React.FC<StatusKPIsProps> = ({ stats }) => {
     }
   };
 
+  // Ensure all 4 status types are always shown
+  const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
+  const statusColors = {
+    'Done': '#10B981',
+    'In Progress': '#3B82F6',
+    'Delay': '#F59E0B',
+    'Not started': '#EF4444'
+  };
+
+  const completeStats = allStatusTypes.map(status => {
+    const existingStat = stats.find(s => s.status === status);
+    return existingStat || {
+      status,
+      count: 0,
+      percentage: 0,
+      color: statusColors[status as keyof typeof statusColors]
+    };
+  });
+
   const totalActions = stats.reduce((sum, stat) => sum + stat.count, 0);
 
   return (
@@ -33,7 +52,7 @@ const StatusKPIs: React.FC<StatusKPIsProps> = ({ stats }) => {
         </div>
       </div>
       <div className="grid grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {completeStats.map((stat) => (
           <div key={stat.status} className="text-center">
             <div className="flex items-center justify-center mb-2">
               <div className={`w-3 h-3 rounded-full ${getStatusColor(stat.status)} mr-2`}></div>
@@ -52,4 +71,4 @@ const StatusKPIs: React.FC<StatusKPIsProps> = ({ stats }) => {
   );
 };
 
-export default StatusKPIs; 
+export default StatusKPIs;
