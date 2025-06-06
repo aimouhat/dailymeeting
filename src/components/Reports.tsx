@@ -61,22 +61,26 @@ const Reports: React.FC = () => {
         try {
           const response = await fetch(imagePath);
           if (!response.ok) {
-            throw new Error(`Failed to load image: ${response.statusText}`);
+            console.warn(`Failed to load image: ${imagePath}`);
+            return '';
           }
           const blob = await response.blob();
           return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
+            reader.onerror = () => {
+              console.warn(`Error reading image: ${imagePath}`);
+              resolve('');
+            };
             reader.readAsDataURL(blob);
           });
         } catch (error) {
-          console.error(`Error loading image ${imagePath}:`, error);
+          console.warn(`Error loading image ${imagePath}:`, error);
           return '';
         }
       };
 
-      // Load all three logos
+      // Load all three logos with error handling
       const [logo1Base64, logo2Base64, logo3Base64] = await Promise.all([
         loadImageAsBase64('/1.png'),
         loadImageAsBase64('/2.png'),
@@ -97,10 +101,14 @@ const Reports: React.FC = () => {
       doc.setLineWidth(0.5);
       doc.rect(8, 8, 194, 281);
 
-      // Add logos with better positioning
-      if (logo1Base64) doc.addImage(logo1Base64, 'PNG', 15, 12, 30, 16);
-      if (logo2Base64) doc.addImage(logo2Base64, 'PNG', 90, 12, 30, 16);
-      if (logo3Base64) doc.addImage(logo3Base64, 'PNG', 165, 12, 30, 16);
+      // Add logos with better positioning and error handling
+      try {
+        if (logo1Base64) doc.addImage(logo1Base64, 'PNG', 15, 12, 30, 16);
+        if (logo2Base64) doc.addImage(logo2Base64, 'PNG', 90, 12, 30, 16);
+        if (logo3Base64) doc.addImage(logo3Base64, 'PNG', 165, 12, 30, 16);
+      } catch (imageError) {
+        console.warn('Error adding images to PDF:', imageError);
+      }
 
       // Add futuristic title with gradient effect simulation
       doc.setFontSize(28);
@@ -262,7 +270,7 @@ const Reports: React.FC = () => {
         // Add actions table with futuristic styling
         const tableColumn = ['ACTION PLAN', 'TAGS', 'ASSIGNED TO', 'FROM', 'TO'];
         const tableRows = todayActionsForReport.map(action => [
-          action.actionPlan,
+          action.actionPlan || '',
           action.tags || '-',
           action.assignedTo || 'UNASSIGNED',
           format(new Date(action.fromDate), 'dd/MM/yyyy'),
@@ -362,19 +370,28 @@ const Reports: React.FC = () => {
         doc.text('ONLINE', 195, 285, { align: 'right' });
       }
 
-      const pdfData = doc.output('datauristring');
-      await mockDataService.saveReport({ fileName, pdfData });
-      doc.save(fileName);
-      return true;
+      // Save the PDF and handle the data
+      try {
+        const pdfData = doc.output('datauristring');
+        await mockDataService.saveReport({ fileName, pdfData });
+        doc.save(fileName);
+        return true;
+      } catch (saveError) {
+        console.error('Error saving PDF:', saveError);
+        // Still try to download even if save fails
+        doc.save(fileName);
+        return true;
+      }
     } catch (error) {
       console.error('Error generating futuristic PDF:', error);
-      return false;
+      throw error;
     }
   };
 
   const generateReport = async () => {
     try {
       setIsGenerating(true);
+      setError(null);
       const today = new Date();
       const fileName = `Daily Meeting Report ${format(today, 'yyyy-MM-dd')}.pdf`;
 
@@ -400,12 +417,10 @@ const Reports: React.FC = () => {
           updatedReports = [newReport, ...historicalReports];
         }
         setHistoricalReports(updatedReports);
-      } else {
-        alert('Failed to generate PDF. Please try again.');
       }
     } catch (error) {
       console.error('Error in generateReport:', error);
-      alert('An error occurred while generating the report.');
+      setError('Failed to generate PDF. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -464,6 +479,11 @@ const Reports: React.FC = () => {
                     </div>
                   )}
                 </div>
+                {error && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+                    {error}
+                  </div>
+                )}
                 <button
                   onClick={generateReport}
                   disabled={isGenerating}
