@@ -33,6 +33,58 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [areaStats, setAreaStats] = useState<AreaStats[]>([]);
   const [statusStats, setStatusStats] = useState<StatusStats[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  
+  // Store current filters to reapply after data refresh
+  const [currentFilters, setCurrentFilters] = useState<{
+    dateRange?: { start: Date | null; end: Date | null };
+    searchTerm?: string;
+    status?: string;
+    area?: string;
+  }>({
+    status: 'auto-filter' // Default filter
+  });
+
+  // Function to apply filters to actions
+  const applyFiltersToActions = (actionsToFilter: Action[], filters: typeof currentFilters) => {
+    let filtered = [...actionsToFilter];
+
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(action =>
+        action.actionPlan.toLowerCase().includes(searchLower) ||
+        action.tags?.toLowerCase().includes(searchLower) ||
+        action.assignedTo?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Handle auto-filter (exclude "Done" actions) vs specific status filter
+    if (filters.status === 'auto-filter') {
+      // Auto-filter: show Not started, In Progress, and Delay only
+      filtered = filtered.filter(action => 
+        action.status === 'Not started' || 
+        action.status === 'In Progress' || 
+        action.status === 'Delay'
+      );
+    } else if (filters.status && filters.status !== '') {
+      // Specific status filter
+      filtered = filtered.filter(action => action.status === filters.status);
+    }
+    // If status is empty string, show all statuses (no filtering)
+
+    if (filters.area) {
+      filtered = filtered.filter(action => action.area === filters.area);
+    }
+
+    if (filters.dateRange?.start) {
+      filtered = filtered.filter(action => new Date(action.fromDate) >= filters.dateRange!.start!);
+    }
+
+    if (filters.dateRange?.end) {
+      filtered = filtered.filter(action => new Date(action.toDate) <= filters.dateRange!.end!);
+    }
+
+    return filtered;
+  };
 
   // Load initial data
   useEffect(() => {
@@ -43,9 +95,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
         const data = await mockDataService.getAllActions();
         setActions(data);
         
-        // Apply auto-filter by default (exclude "Done" actions)
-        const autoFiltered = data.filter(action => action.status !== 'Done');
-        setFilteredActions(autoFiltered);
+        // Apply current filters to the new data
+        const filtered = applyFiltersToActions(data, currentFilters);
+        setFilteredActions(filtered);
         
         calculateStats(data);
         setLastUpdated(new Date());
@@ -60,12 +112,15 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
     loadActions();
 
     // Set up periodic refresh to check for overdue actions
-    const refreshInterval = setInterval(loadActions, 60000); // Check every minute
+    // This will only update data, not reset filters
+    const refreshInterval = setInterval(() => {
+      loadActions(); // This will preserve filters thanks to currentFilters state
+    }, 60000); // Check every minute
 
     return () => {
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [currentFilters]); // Re-run when filters change
 
   // Set up mock WebSocket event handlers
   useEffect(() => {
@@ -73,19 +128,12 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const newActions = [...prev, action];
         calculateStats(newActions);
+        
+        // Apply current filters to include/exclude the new action
+        const filtered = applyFiltersToActions(newActions, currentFilters);
+        setFilteredActions(filtered);
+        
         return newActions;
-      });
-      
-      // Only add to filtered actions if it's not "Done" (for auto-filter)
-      setFilteredActions(prev => {
-        // Check if we're currently auto-filtering (if filtered actions don't include "Done" actions)
-        const hasCompletedActions = prev.some(a => a.status === 'Done');
-        if (!hasCompletedActions && action.status !== 'Done') {
-          return [...prev, action];
-        } else if (hasCompletedActions) {
-          return [...prev, action];
-        }
-        return prev;
       });
       
       setLastUpdated(new Date());
@@ -95,9 +143,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const updatedActions = prev.map(a => a.id === action.id ? action : a);
         calculateStats(updatedActions);
+        
+        // Apply current filters to the updated data
+        const filtered = applyFiltersToActions(updatedActions, currentFilters);
+        setFilteredActions(filtered);
+        
         return updatedActions;
       });
-      setFilteredActions(prev => prev.map(a => a.id === action.id ? action : a));
       setLastUpdated(new Date());
     };
 
@@ -105,9 +157,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const updatedActions = prev.filter(a => a.id !== id);
         calculateStats(updatedActions);
+        
+        // Apply current filters to the updated data
+        const filtered = applyFiltersToActions(updatedActions, currentFilters);
+        setFilteredActions(filtered);
+        
         return updatedActions;
       });
-      setFilteredActions(prev => prev.filter(a => a.id !== id));
       setLastUpdated(new Date());
     };
 
@@ -116,7 +172,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       mockDataService.onActionUpdated = undefined;
       mockDataService.onActionDeleted = undefined;
     };
-  }, []);
+  }, [currentFilters]); // Re-setup handlers when filters change
 
   const calculateStats = (actions: Action[]) => {
     // Calculate area stats
@@ -163,18 +219,12 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const updatedActions = [...prev, newAction];
         calculateStats(updatedActions);
+        
+        // Apply current filters to include/exclude the new action
+        const filtered = applyFiltersToActions(updatedActions, currentFilters);
+        setFilteredActions(filtered);
+        
         return updatedActions;
-      });
-      
-      // Only add to filtered actions if it matches current filter
-      setFilteredActions(prev => {
-        const hasCompletedActions = prev.some(a => a.status === 'Done');
-        if (!hasCompletedActions && newAction.status !== 'Done') {
-          return [...prev, newAction];
-        } else if (hasCompletedActions) {
-          return [...prev, newAction];
-        }
-        return prev;
       });
       
       setLastUpdated(new Date());
@@ -190,9 +240,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const updatedActions = prev.map(a => a.id === id ? updatedAction : a);
         calculateStats(updatedActions);
+        
+        // Apply current filters to the updated data
+        const filtered = applyFiltersToActions(updatedActions, currentFilters);
+        setFilteredActions(filtered);
+        
         return updatedActions;
       });
-      setFilteredActions(prev => prev.map(a => a.id === id ? updatedAction : a));
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Error updating action:', err);
@@ -206,9 +260,13 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const updatedActions = prev.filter(a => a.id !== id);
         calculateStats(updatedActions);
+        
+        // Apply current filters to the updated data
+        const filtered = applyFiltersToActions(updatedActions, currentFilters);
+        setFilteredActions(filtered);
+        
         return updatedActions;
       });
-      setFilteredActions(prev => prev.filter(a => a.id !== id));
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Error deleting action:', err);
@@ -222,43 +280,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
     status?: string;
     area?: string;
   }) => {
-    let filtered = [...actions];
-
-    if (filters.searchTerm) {
-      const searchLower = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(action =>
-        action.actionPlan.toLowerCase().includes(searchLower) ||
-        action.tags?.toLowerCase().includes(searchLower) ||
-        action.assignedTo?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Handle auto-filter (exclude "Done" actions) vs specific status filter
-    if (filters.status === 'auto-filter') {
-      // Auto-filter: show Not started, In Progress, and Delay only
-      filtered = filtered.filter(action => 
-        action.status === 'Not started' || 
-        action.status === 'In Progress' || 
-        action.status === 'Delay'
-      );
-    } else if (filters.status && filters.status !== '') {
-      // Specific status filter
-      filtered = filtered.filter(action => action.status === filters.status);
-    }
-    // If status is empty string, show all statuses (no filtering)
-
-    if (filters.area) {
-      filtered = filtered.filter(action => action.area === filters.area);
-    }
-
-    if (filters.dateRange?.start) {
-      filtered = filtered.filter(action => new Date(action.fromDate) >= filters.dateRange!.start!);
-    }
-
-    if (filters.dateRange?.end) {
-      filtered = filtered.filter(action => new Date(action.toDate) <= filters.dateRange!.end!);
-    }
-
+    // Store the new filters
+    setCurrentFilters(filters);
+    
+    // Apply filters to current actions
+    const filtered = applyFiltersToActions(actions, filters);
     setFilteredActions(filtered);
   };
 
