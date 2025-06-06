@@ -91,7 +91,7 @@ const Reports: React.FC = () => {
       // Add date with modern styling
       doc.setFontSize(12);
       doc.setTextColor(148, 163, 184); // slate-400
-      doc.text(format(new Date(), 'dddd, MMMM Do, YYYY'), 105, 85, { align: 'center' });
+      doc.text(format(new Date(), 'dddd, MMMM Do, yyyy'), 105, 85, { align: 'center' });
 
       // Add decorative line with gradient effect
       doc.setDrawColor(34, 197, 94);
@@ -215,7 +215,7 @@ const Reports: React.FC = () => {
       
       doc.setFontSize(10);
       doc.setTextColor(59, 130, 246);
-      doc.text(format(new Date(), 'dddd, MMMM Do, YYYY').toUpperCase(), 105, yPosition + 12, { align: 'center' });
+      doc.text(format(new Date(), 'dddd, MMMM Do, yyyy').toUpperCase(), 105, yPosition + 12, { align: 'center' });
       yPosition += 25;
 
       if (todayActionsForReport.length === 0) {
