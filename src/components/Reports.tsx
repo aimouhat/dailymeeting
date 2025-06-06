@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Download, FileText, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, FileText } from 'lucide-react';
 import { useActions } from '../context/ActionContext';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { jsPDF } from 'jspdf';
@@ -19,8 +19,6 @@ const Reports: React.FC = () => {
   const [historicalReports, setHistoricalReports] = useState<Report[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [showReportPreview, setShowReportPreview] = useState(false);
-  const [reportContent, setReportContent] = useState('');
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -47,678 +45,356 @@ const Reports: React.FC = () => {
     loadHistoricalReports();
   }, []);
 
-  const generatePrintFriendlyHTML = (actions: any[], fileName: string): string => {
-    // Filter actions for today
-    const todayActionsForReport = actions.filter(action => {
-      const actionDate = new Date(action.fromDate);
-      const today = new Date();
-      return actionDate.toDateString() === today.toDateString();
-    });
+  const generateDirectPDF = async (actions: any[], fileName: string) => {
+    try {
+      console.log('Starting direct PDF generation...');
+      const doc = new jsPDF('p', 'mm', 'a4'); // A4 format: 210 x 297 mm
+      
+      // A4 dimensions
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 15;
+      const contentWidth = pageWidth - (margin * 2);
 
-    // Ensure all 4 status types are shown
-    const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
-    const statusColors = {
-      'Done': '#10B981',
-      'In Progress': '#3B82F6', 
-      'Delay': '#F59E0B',
-      'Not started': '#EF4444'
-    };
-
-    const completeStatusStats = allStatusTypes.map(status => {
-      const existingStat = statusStats.find(s => s.status === status);
-      return existingStat || {
-        status,
-        count: 0,
-        percentage: 0,
-        color: statusColors[status as keyof typeof statusColors]
+      // Function to load and convert image to base64
+      const loadImageAsBase64 = async (imagePath: string): Promise<string> => {
+        try {
+          const response = await fetch(imagePath);
+          if (!response.ok) {
+            console.warn(`Failed to load image: ${imagePath}`);
+            return '';
+          }
+          const blob = await response.blob();
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => {
+              console.warn(`Error reading image: ${imagePath}`);
+              resolve('');
+            };
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.warn(`Error loading image ${imagePath}:`, error);
+          return '';
+        }
       };
-    });
 
-    const totalActions = actions.length;
+      // Load logos
+      const [logo1Base64, logo2Base64, logo3Base64] = await Promise.all([
+        loadImageAsBase64('/1.png'),
+        loadImageAsBase64('/2.png'),
+        loadImageAsBase64('/3.png')
+      ]);
 
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Meeting Report - ${format(new Date(), 'yyyy-MM-dd')}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      // Header Background
+      doc.setFillColor(30, 60, 114); // Dark blue
+      doc.rect(0, 0, pageWidth, 60, 'F');
+
+      // Add logos with better positioning
+      try {
+        if (logo1Base64) doc.addImage(logo1Base64, 'PNG', margin, 10, 40, 20);
+        if (logo2Base64) doc.addImage(logo2Base64, 'PNG', (pageWidth/2) - 20, 10, 40, 20);
+        if (logo3Base64) doc.addImage(logo3Base64, 'PNG', pageWidth - margin - 40, 10, 40, 20);
+      } catch (imageError) {
+        console.warn('Error adding images to PDF:', imageError);
+      }
+
+      // Title
+      doc.setFontSize(24);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DAILY MEETING REPORT', pageWidth/2, 45, { align: 'center' });
+
+      // Subtitle
+      doc.setFontSize(12);
+      doc.setTextColor(200, 220, 255);
+      doc.text('INTEGRATED EXPLORATORY MINES', pageWidth/2, 52, { align: 'center' });
+
+      // Date
+      doc.setFontSize(10);
+      doc.text(format(new Date(), 'EEEE, MMMM do, yyyy'), pageWidth/2, 57, { align: 'center' });
+
+      let yPosition = 75;
+
+      // KPIs Section
+      doc.setFillColor(245, 247, 250);
+      doc.rect(margin, yPosition, contentWidth, 50, 'F');
+      doc.setDrawColor(30, 60, 114);
+      doc.setLineWidth(1);
+      doc.rect(margin, yPosition, contentWidth, 50);
+
+      // KPIs Title
+      doc.setFontSize(16);
+      doc.setTextColor(30, 60, 114);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ACTION STATUS ANALYTICS', pageWidth/2, yPosition + 10, { align: 'center' });
+
+      // Ensure all 4 status types are shown
+      const allStatusTypes = ['Not started', 'In Progress', 'Delay', 'Done'];
+      const statusColors = {
+        'Done': [16, 185, 129],
+        'In Progress': [59, 130, 246],
+        'Delay': [245, 158, 11],
+        'Not started': [239, 68, 68]
+      };
+
+      const completeStatusStats = allStatusTypes.map(status => {
+        const existingStat = statusStats.find(s => s.status === status);
+        return existingStat || {
+          status,
+          count: 0,
+          percentage: 0,
+          color: `rgb(${statusColors[status as keyof typeof statusColors].join(',')})`
+        };
+      });
+
+      // Total Actions Card (centered)
+      const totalActions = actions.length;
+      doc.setFillColor(30, 60, 114);
+      doc.rect(pageWidth/2 - 30, yPosition + 15, 60, 25, 'F');
+      doc.setDrawColor(16, 185, 129);
+      doc.setLineWidth(2);
+      doc.rect(pageWidth/2 - 30, yPosition + 15, 60, 25);
+
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TOTAL ACTIONS', pageWidth/2, yPosition + 25, { align: 'center' });
+      
+      doc.setFontSize(20);
+      doc.setTextColor(16, 185, 129);
+      doc.text(totalActions.toString(), pageWidth/2, yPosition + 35, { align: 'center' });
+
+      yPosition += 60;
+
+      // Status KPI Cards in a row
+      const cardWidth = (contentWidth - 30) / 4; // 4 cards with spacing
+      const cardHeight = 30;
+      const cardSpacing = 10;
+
+      completeStatusStats.forEach((stat, index) => {
+        const cardX = margin + (index * (cardWidth + cardSpacing));
         
-        body {
-            font-family: 'Arial', sans-serif;
-            background: white !important;
-            color: #333 !important;
-            line-height: 1.6;
-            padding: 20px;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
+        // Card background
+        doc.setFillColor(248, 250, 252);
+        doc.rect(cardX, yPosition, cardWidth, cardHeight, 'F');
         
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white !important;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-            border: 2px solid #e2e8f0;
-        }
+        // Card border with status color
+        const statusColor = statusColors[stat.status as keyof typeof statusColors];
+        doc.setDrawColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.setLineWidth(1.5);
+        doc.rect(cardX, yPosition, cardWidth, cardHeight);
         
-        .header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-            color: white !important;
-            padding: 30px;
-            text-align: center;
-            position: relative;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
+        // Status indicator bar
+        doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.rect(cardX, yPosition, cardWidth, 3, 'F');
         
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-            opacity: 0.3;
-        }
+        // Status name
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'bold');
+        doc.text(stat.status.toUpperCase(), cardX + cardWidth/2, yPosition + 12, { align: 'center' });
         
-        .logos {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 2;
-        }
+        // Percentage
+        doc.setFontSize(14);
+        doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${stat.percentage.toFixed(1)}%`, cardX + cardWidth/2, yPosition + 20, { align: 'center' });
         
-        .logo {
-            background: rgba(255,255,255,0.1) !important;
-            padding: 10px 20px;
-            border-radius: 10px;
-            border: 2px solid rgba(255,255,255,0.2) !important;
-            font-weight: bold;
-            font-size: 12px;
-            letter-spacing: 1px;
-            color: white !important;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .title {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            position: relative;
-            z-index: 2;
-            color: white !important;
-        }
-        
-        .subtitle {
-            font-size: 1.2em;
-            opacity: 0.9;
-            margin-bottom: 5px;
-            position: relative;
-            z-index: 2;
-            color: white !important;
-        }
-        
-        .date {
-            font-size: 1em;
-            opacity: 0.8;
-            position: relative;
-            z-index: 2;
-            color: white !important;
-        }
-        
-        .content {
-            padding: 40px;
-            background: white !important;
-        }
-        
-        .kpi-section {
-            margin-bottom: 40px;
-        }
-        
-        .section-title {
-            font-size: 1.8em;
-            font-weight: bold;
-            color: #1e3c72 !important;
-            margin-bottom: 20px;
-            text-align: center;
-            position: relative;
-        }
-        
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea, #764ba2) !important;
-            border-radius: 2px;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .kpi-card {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            border: 2px solid #e2e8f0 !important;
-            transition: transform 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--status-color) !important;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .kpi-card.total {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-            color: white !important;
-            grid-column: span 2;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .kpi-card.total::before {
-            background: #10B981 !important;
-        }
-        
-        .kpi-label {
-            font-size: 0.9em;
-            font-weight: 600;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.8;
-        }
-        
-        .kpi-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .kpi-percentage {
-            font-size: 1.1em;
-            font-weight: 600;
-            opacity: 0.9;
-        }
-        
-        .actions-section {
-            margin-top: 40px;
-        }
-        
-        .actions-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-            color: white !important;
-            padding: 20px;
-            border-radius: 15px 15px 0 0;
-            text-align: center;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .actions-count {
-            font-size: 1.2em;
-            margin-top: 5px;
-            opacity: 0.9;
-            color: white !important;
-        }
-        
-        .actions-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white !important;
-            border-radius: 0 0 15px 15px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .actions-table th {
-            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
-            padding: 15px 10px;
-            text-align: left;
-            font-weight: bold;
-            color: #1e3c72 !important;
-            border-bottom: 2px solid #e2e8f0 !important;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .actions-table td {
-            padding: 15px 10px;
-            border-bottom: 1px solid #f1f5f9 !important;
-            vertical-align: top;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .actions-table tr:nth-child(even) {
-            background: #f8fafc !important;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .action-plan {
-            font-weight: 600;
-            color: #1e3c72 !important;
-            max-width: 300px;
-            word-wrap: break-word;
-            line-height: 1.4;
-        }
-        
-        .tag {
-            background: #e2e8f0 !important;
-            color: #64748b !important;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            font-weight: 500;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .assigned-to {
-            font-weight: 500;
-            color: #475569 !important;
-        }
-        
-        .date-cell {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            color: #64748b !important;
-        }
-        
-        .no-actions {
-            text-align: center;
-            padding: 40px;
-            color: #64748b !important;
-            font-style: italic;
-            background: #f8fafc !important;
-            border-radius: 0 0 15px 15px;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .footer {
-            background: #1e3c72 !important;
-            color: white !important;
-            padding: 20px;
-            text-align: center;
-            font-size: 0.9em;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .footer-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 5px;
-            background: #10B981 !important;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .print-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #10B981 !important;
-            color: white !important;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 1000;
-            -webkit-print-color-adjust: exact !important;
-            color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-        
-        .print-button:hover {
-            background: #059669 !important;
-        }
-        
-        @media print {
-            body {
-                background: white !important;
-                padding: 0;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
+        // Count
+        doc.setFontSize(7);
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${stat.count} ACTIONS`, cardX + cardWidth/2, yPosition + 26, { align: 'center' });
+      });
+
+      yPosition += cardHeight + 20;
+
+      // Filter actions for today
+      const todayActionsForReport = actions.filter(action => {
+        const actionDate = new Date(action.fromDate);
+        const today = new Date();
+        return actionDate.toDateString() === today.toDateString();
+      });
+
+      // Today's Actions Header
+      doc.setFillColor(30, 60, 114);
+      doc.rect(margin, yPosition, contentWidth, 15, 'F');
+      doc.setDrawColor(16, 185, 129);
+      doc.setLineWidth(0.5);
+      doc.rect(margin, yPosition, contentWidth, 15);
+
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`TODAY'S MISSION BRIEFING (${todayActionsForReport.length} ACTIONS)`, pageWidth/2, yPosition + 10, { align: 'center' });
+
+      yPosition += 20;
+
+      if (todayActionsForReport.length === 0) {
+        // No actions message
+        doc.setFillColor(248, 250, 252);
+        doc.rect(margin + 20, yPosition, contentWidth - 40, 25, 'F');
+        doc.setDrawColor(59, 130, 246);
+        doc.setLineWidth(1);
+        doc.rect(margin + 20, yPosition, contentWidth - 40, 25);
+
+        doc.setFontSize(12);
+        doc.setTextColor(100, 116, 139);
+        doc.setFont('helvetica', 'italic');
+        doc.text('NO ACTIVE MISSIONS TODAY', pageWidth/2, yPosition + 12, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text('ALL SYSTEMS OPERATIONAL', pageWidth/2, yPosition + 20, { align: 'center' });
+      } else {
+        // Actions table with proper A4 formatting
+        const tableColumn = ['ACTION PLAN', 'TAGS', 'ASSIGNED TO', 'FROM', 'TO'];
+        const tableRows = todayActionsForReport.map(action => [
+          action.actionPlan || '',
+          action.tags || '-',
+          action.assignedTo || 'UNASSIGNED',
+          format(new Date(action.fromDate), 'dd/MM/yyyy'),
+          format(new Date(action.toDate), 'dd/MM/yyyy'),
+        ]);
+
+        autoTable(doc, {
+          head: [tableColumn],
+          body: tableRows,
+          startY: yPosition,
+          theme: 'grid',
+          styles: {
+            fontSize: 8,
+            cellPadding: 3,
+            textColor: [51, 65, 85],
+            lineWidth: 0.5,
+            lineColor: [203, 213, 225],
+            overflow: 'linebreak',
+            cellWidth: 'wrap',
+            valign: 'top'
+          },
+          headStyles: {
+            fillColor: [30, 60, 114],
+            textColor: [255, 255, 255],
+            fontSize: 9,
+            fontStyle: 'bold',
+            halign: 'center',
+            valign: 'middle',
+            lineWidth: 1,
+            lineColor: [16, 185, 129]
+          },
+          alternateRowStyles: {
+            fillColor: [248, 250, 252],
+          },
+          columnStyles: {
+            0: { cellWidth: 70, halign: 'left' }, // Action Plan
+            1: { cellWidth: 25, halign: 'center' }, // Tags
+            2: { cellWidth: 40, halign: 'center' }, // Assigned To
+            3: { cellWidth: 25, halign: 'center' }, // From Date
+            4: { cellWidth: 25, halign: 'center' }, // To Date
+          },
+          margin: { left: margin, right: margin },
+          pageBreak: 'auto',
+          showHead: 'everyPage',
+          tableWidth: 'auto',
+          didParseCell: function(data) {
+            if (data.column.index === 0) {
+              data.cell.styles.minCellHeight = 10;
             }
-            
-            .container {
-                box-shadow: none;
-                border-radius: 0;
-                border: none;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
+          },
+          didDrawPage: function(data) {
+            // Add page background for continuation pages
+            if (data.pageNumber > 1) {
+              // Header for continuation pages
+              doc.setFillColor(30, 60, 114);
+              doc.rect(0, 0, pageWidth, 25, 'F');
+              
+              doc.setFontSize(12);
+              doc.setTextColor(255, 255, 255);
+              doc.setFont('helvetica', 'bold');
+              doc.text('DAILY MEETING REPORT - CONTINUED', pageWidth/2, 15, { align: 'center' });
+              
+              // Borders
+              doc.setDrawColor(16, 185, 129);
+              doc.setLineWidth(1);
+              doc.rect(5, 5, pageWidth - 10, pageHeight - 10);
             }
-            
-            .header {
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-                color: white !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .kpi-grid {
-                grid-template-columns: repeat(4, 1fr);
-                page-break-inside: avoid;
-            }
-            
-            .kpi-card {
-                background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .kpi-card.total {
-                grid-column: span 4;
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-                color: white !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .actions-table th {
-                background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
-                color: #1e3c72 !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .actions-table tr:nth-child(even) {
-                background: #f8fafc !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .actions-header {
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-                color: white !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .footer {
-                background: #1e3c72 !important;
-                color: white !important;
-                -webkit-print-color-adjust: exact !important;
-                color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .print-button {
-                display: none;
-            }
-            
-            .actions-section {
-                page-break-inside: avoid;
-            }
-            
-            .actions-table {
-                page-break-inside: auto;
-            }
-            
-            .actions-table tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
-            }
-        }
-    </style>
-</head>
-<body>
-    <button class="print-button" onclick="window.print()">🖨️ Print to PDF</button>
-    
-    <div class="container">
-        <div class="header">
-            <div class="logos">
-                <div class="logo">FUTURE IS MINE</div>
-                <div class="logo">INTEGRATED EXPLORATORY MINES</div>
-                <div class="logo">OCP GROUP</div>
-            </div>
-            <div class="title">DAILY MEETING REPORT</div>
-            <div class="subtitle">Mining Operations Dashboard</div>
-            <div class="date">${format(new Date(), 'EEEE, MMMM do, yyyy')}</div>
-        </div>
+          }
+        });
+      }
+
+      // Footer on all pages
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
         
-        <div class="content">
-            <div class="kpi-section">
-                <h2 class="section-title">Action Status Analytics</h2>
-                <div class="kpi-grid">
-                    <div class="kpi-card total">
-                        <div class="kpi-label">Total Actions</div>
-                        <div class="kpi-value">${totalActions}</div>
-                        <div class="kpi-percentage">All Operations</div>
-                    </div>
-                    ${completeStatusStats.map(stat => `
-                        <div class="kpi-card" style="--status-color: ${stat.color}">
-                            <div class="kpi-label">${stat.status}</div>
-                            <div class="kpi-value" style="color: ${stat.color} !important">${stat.count}</div>
-                            <div class="kpi-percentage">${stat.percentage.toFixed(1)}%</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            
-            <div class="actions-section">
-                <div class="actions-header">
-                    <h2>Today's Mission Briefing</h2>
-                    <div class="actions-count">${todayActionsForReport.length} Active Actions</div>
-                </div>
-                
-                ${todayActionsForReport.length > 0 ? `
-                    <table class="actions-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 40%">Action Plan</th>
-                                <th style="width: 10%">Tags</th>
-                                <th style="width: 20%">Assigned To</th>
-                                <th style="width: 15%">From Date</th>
-                                <th style="width: 15%">To Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${todayActionsForReport.map(action => `
-                                <tr>
-                                    <td class="action-plan">${action.actionPlan}</td>
-                                    <td>${action.tags ? `<span class="tag">${action.tags}</span>` : '-'}</td>
-                                    <td class="assigned-to">${action.assignedTo || 'UNASSIGNED'}</td>
-                                    <td class="date-cell">${format(new Date(action.fromDate), 'dd/MM/yyyy')}</td>
-                                    <td class="date-cell">${format(new Date(action.toDate), 'dd/MM/yyyy')}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                ` : `
-                    <div class="no-actions">
-                        <h3>No Active Missions Today</h3>
-                        <p>All systems operational - No scheduled actions for today</p>
-                    </div>
-                `}
-            </div>
-        </div>
+        // Footer background
+        doc.setFillColor(30, 60, 114);
+        doc.rect(0, pageHeight - 20, pageWidth, 20, 'F');
         
-        <div class="footer">
-            <div class="footer-info">
-                <div>Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')} UTC</div>
-                <div>Classification: INTERNAL</div>
-                <div><span class="status-indicator"></span>System Online</div>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        // Auto-print instructions
-        setTimeout(() => {
-            const printInstructions = document.createElement('div');
-            printInstructions.style.cssText = \`
-                position: fixed;
-                top: 70px;
-                right: 20px;
-                background: #1e3c72;
-                color: white;
-                padding: 15px;
-                border-radius: 8px;
-                font-size: 12px;
-                z-index: 1001;
-                max-width: 250px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            \`;
-            printInstructions.innerHTML = \`
-                <strong>📄 To save as PDF:</strong><br>
-                1. Press Ctrl+P (or Cmd+P on Mac)<br>
-                2. Select "Save as PDF" as destination<br>
-                3. Choose "More settings" → "Background graphics"<br>
-                4. Click Save<br><br>
-                <small>This ensures colors and styling are preserved!</small>
-            \`;
-            document.body.appendChild(printInstructions);
-            
-            // Remove instructions after 10 seconds
-            setTimeout(() => {
-                if (printInstructions.parentNode) {
-                    printInstructions.parentNode.removeChild(printInstructions);
-                }
-            }, 10000);
-        }, 1000);
-    </script>
-</body>
-</html>`;
+        // Footer border
+        doc.setDrawColor(16, 185, 129);
+        doc.setLineWidth(0.5);
+        doc.line(margin, pageHeight - 20, pageWidth - margin, pageHeight - 20);
+        
+        // Footer text
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`GENERATED: ${format(new Date(), 'dd/MM/yyyy HH:mm')} UTC`, margin, pageHeight - 12);
+        doc.text(`CLASSIFICATION: INTERNAL`, pageWidth/2, pageHeight - 12, { align: 'center' });
+        doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, pageHeight - 12, { align: 'right' });
+        
+        // System status indicator
+        doc.setFillColor(16, 185, 129);
+        doc.circle(pageWidth - margin - 15, pageHeight - 8, 1, 'F');
+        doc.setFontSize(6);
+        doc.setTextColor(16, 185, 129);
+        doc.text('ONLINE', pageWidth - margin - 20, pageHeight - 8, { align: 'right' });
+      }
+
+      // Save the PDF directly
+      doc.save(fileName);
+      
+      // Save to mock service
+      const pdfData = doc.output('datauristring');
+      await mockDataService.saveReport({ fileName, pdfData });
+      
+      return true;
+    } catch (error) {
+      console.error('Error generating direct PDF:', error);
+      throw error;
+    }
   };
 
   const generateReport = async () => {
     try {
       setIsGenerating(true);
       const today = new Date();
-      const fileName = `Daily Meeting Report ${format(today, 'yyyy-MM-dd')}.html`;
+      const fileName = `Daily Meeting Report ${format(today, 'yyyy-MM-dd')}.pdf`;
 
       const existingReportIndex = historicalReports.findIndex(report =>
         isSameDay(parseISO(report.date), today)
       );
 
-      // Generate HTML content with print-friendly styling
-      const htmlContent = generatePrintFriendlyHTML(actions, fileName);
-      setReportContent(htmlContent);
-      
-      // Create blob and download link
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const success = await generateDirectPDF(actions, fileName);
 
-      // Also try to open in new window
-      try {
-        const printWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-        if (printWindow) {
-          printWindow.document.write(htmlContent);
-          printWindow.document.close();
-          printWindow.focus();
+      if (success) {
+        const newReport: Report = {
+          id: fileName,
+          date: format(today, 'yyyy-MM-dd'),
+          fileName,
+          filePath: `Historical Reports/${fileName}`,
+        };
+
+        let updatedReports;
+        if (existingReportIndex !== -1) {
+          updatedReports = [...historicalReports];
+          updatedReports[existingReportIndex] = newReport;
+        } else {
+          updatedReports = [newReport, ...historicalReports];
         }
-      } catch (popupError) {
-        console.log('Popup blocked, but file was downloaded');
-        setShowReportPreview(true);
+        setHistoricalReports(updatedReports);
       }
-
-      // Save to mock service
-      const pdfData = 'data:text/html;base64,' + btoa(htmlContent);
-      await mockDataService.saveReport({ fileName, pdfData });
-
-      const newReport: Report = {
-        id: fileName,
-        date: format(today, 'yyyy-MM-dd'),
-        fileName,
-        filePath: `Historical Reports/${fileName}`,
-      };
-
-      let updatedReports;
-      if (existingReportIndex !== -1) {
-        updatedReports = [...historicalReports];
-        updatedReports[existingReportIndex] = newReport;
-      } else {
-        updatedReports = [newReport, ...historicalReports];
-      }
-      setHistoricalReports(updatedReports);
-      
     } catch (error) {
       console.error('Error in generateReport:', error);
     } finally {
@@ -733,17 +409,6 @@ const Reports: React.FC = () => {
     } catch (error) {
       console.error('Error downloading report:', error);
       alert('Failed to download the report. Please try again.');
-    }
-  };
-
-  const openReportPreview = () => {
-    if (reportContent) {
-      const printWindow = window.open('', '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
-      if (printWindow) {
-        printWindow.document.write(reportContent);
-        printWindow.document.close();
-        printWindow.focus();
-      }
     }
   };
 
@@ -790,27 +455,14 @@ const Reports: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={generateReport}
-                    disabled={isGenerating}
-                    className={`flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:from-green-600 hover:to-green-700 transition-all duration-200 ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <Download className="w-5 h-5" />
-                    <span>{isGenerating ? 'Generating...' : 'Generate Report'}</span>
-                  </button>
-                  
-                  {reportContent && (
-                    <button
-                      onClick={openReportPreview}
-                      className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center space-x-2 transition-all duration-200"
-                      title="Open last generated report"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
+                <button
+                  onClick={generateReport}
+                  disabled={isGenerating}
+                  className={`w-full mt-4 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg flex items-center justify-center space-x-2 hover:from-green-600 hover:to-green-700 transition-all duration-200 ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <Download className="w-5 h-5" />
+                  <span>{isGenerating ? 'Generating PDF...' : 'Generate PDF Report'}</span>
+                </button>
               </div>
 
               <div className="bg-white rounded-xl shadow-md p-5">
