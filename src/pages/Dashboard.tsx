@@ -105,17 +105,10 @@ const Dashboard: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <div className="flex items-center space-x-4">
             <NetworkInfo />
-          <div className="text-sm text-gray-500">
-            Last updated: {lastUpdated.toLocaleTimeString()}
+            <div className="text-sm text-gray-500">
+              Last updated: {lastUpdated.toLocaleTimeString()}
             </div>
           </div>
-        </div>
-
-        <div className="mb-6">
-          <FilterBar 
-            onFilter={filterActions} 
-            areas={uniqueAreas}
-          />
         </div>
 
         <div className="grid grid-cols-12 gap-6 mb-8">
@@ -138,7 +131,7 @@ const Dashboard: React.FC = () => {
               <div className="p-4 h-[calc(100%-4rem)]">
                 {showVideo ? (
                   <div className="h-full">
-                  <VideoPlayer folderPath="/videos" />
+                    <VideoPlayer folderPath="/videos" />
                   </div>
                 ) : (
                   <div className="space-y-4 h-full">
@@ -154,6 +147,14 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Filter Bar moved here - between KPIs and Action List */}
+        <div className="mb-6">
+          <FilterBar 
+            onFilter={filterActions} 
+            areas={uniqueAreas}
+          />
         </div>
 
         <div>
