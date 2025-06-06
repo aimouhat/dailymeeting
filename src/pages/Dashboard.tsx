@@ -68,11 +68,9 @@ const Dashboard: React.FC = () => {
           {/* Mobile Header */}
           <div className="flex justify-between items-center h-14 sm:h-16 lg:hidden">
             <div className="flex items-center space-x-2">
-              <img src="/2.png" alt="Integrated Exploratory Mines" className="h-8" />
-              <div>
-                <h1 className="text-sm font-bold">Daily Meeting Manager</h1>
-                <p className="text-xs text-blue-200">{currentDate}</p>
-              </div>
+              <img src="/1.png" alt="Future is Mine" className="h-6" />
+              <img src="/2.png" alt="Integrated Exploratory Mines" className="h-6" />
+              <img src="/3.png" alt="OCP SBU Mining" className="h-6" />
             </div>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -143,12 +141,23 @@ const Dashboard: React.FC = () => {
       </header>
 
       <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 flex-grow">
-        {/* Dashboard Title */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-2 sm:space-y-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+        {/* Mobile Dashboard Title with Last Update and QR */}
+        <div className="flex justify-between items-center mb-4 lg:hidden">
+          <h1 className="text-lg font-bold text-gray-900">Dashboard</h1>
+          <div className="flex items-center space-x-3">
+            <div className="text-xs text-gray-500">
+              Last update: {lastUpdated.toLocaleTimeString()}
+            </div>
             <NetworkInfo />
-            <div className="text-xs sm:text-sm text-gray-500">
+          </div>
+        </div>
+
+        {/* Desktop Dashboard Title */}
+        <div className="hidden lg:flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <div className="flex items-center space-x-4">
+            <NetworkInfo />
+            <div className="text-sm text-gray-500">
               Last updated: {lastUpdated.toLocaleTimeString()}
             </div>
           </div>
