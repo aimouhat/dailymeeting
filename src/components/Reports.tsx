@@ -15,7 +15,7 @@ interface Report {
 
 const Reports: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { actions } = useActions();
+  const { actions, statusStats } = useActions();
   const [historicalReports, setHistoricalReports] = useState<Report[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,66 +105,150 @@ const Reports: React.FC = () => {
       doc.setFont('helvetica', 'normal');
       doc.text(today, 105, 65, { align: 'center' });
 
-      const introText = [
-        'Hello everyone,',
-        '',
-        'This document summarizes the key action items discussed during today\'s meeting.',
-        'Your attention to these points and commitment to addressing them will contribute',
-        'significantly to our continued progress and team success.',
-        '',
-        'Thank you for your collaboration.',
-      ];
-
+      // Add KPIs Section
       let yPosition = 85;
-      doc.setFontSize(11);
+      
+      // KPIs Header
+      doc.setFontSize(16);
+      doc.setTextColor(34, 197, 94);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Action Status KPIs', 105, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      // Total Actions
+      doc.setFontSize(14);
       doc.setTextColor(60, 60, 60);
-      introText.forEach(line => {
-        if (line === '') {
-          yPosition += 5;
-        } else {
-          doc.text(line, 25, yPosition, { maxWidth: 160 });
-          yPosition += 8;
-        }
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total Actions', 105, yPosition, { align: 'center' });
+      yPosition += 8;
+      
+      doc.setFontSize(20);
+      doc.setTextColor(59, 130, 246); // Blue color
+      doc.text(actions.length.toString(), 105, yPosition, { align: 'center' });
+      yPosition += 20;
+
+      // KPI Cards in a row
+      const cardWidth = 40;
+      const cardHeight = 25;
+      const startX = 25;
+      const cardSpacing = 5;
+
+      statusStats.forEach((stat, index) => {
+        const cardX = startX + (index * (cardWidth + cardSpacing));
+        
+        // Card background
+        doc.setFillColor(245, 247, 250);
+        doc.rect(cardX, yPosition, cardWidth, cardHeight, 'F');
+        
+        // Card border
+        doc.setDrawColor(229, 231, 235);
+        doc.setLineWidth(0.5);
+        doc.rect(cardX, yPosition, cardWidth, cardHeight);
+        
+        // Status name
+        doc.setFontSize(10);
+        doc.setTextColor(75, 85, 99);
+        doc.setFont('helvetica', 'bold');
+        doc.text(stat.status, cardX + cardWidth/2, yPosition + 8, { align: 'center' });
+        
+        // Percentage
+        doc.setFontSize(14);
+        doc.setTextColor(34, 197, 94);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${stat.percentage.toFixed(1)}%`, cardX + cardWidth/2, yPosition + 16, { align: 'center' });
+        
+        // Count
+        doc.setFontSize(8);
+        doc.setTextColor(107, 114, 128);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${stat.count} actions`, cardX + cardWidth/2, yPosition + 22, { align: 'center' });
       });
+
+      yPosition += cardHeight + 20;
 
       // Add decorative line before table
-      doc.setDrawColor(34, 197, 94); // Green color
-      doc.line(20, yPosition + 5, 190, yPosition + 5);
+      doc.setDrawColor(34, 197, 94);
+      doc.line(20, yPosition, 190, yPosition);
+      yPosition += 10;
 
-      // Add actions table with modern styling
-      const tableColumn = ['Action Plan', 'Area', 'Discipline', 'Assigned To', 'Status'];
-      const tableRows = actions.map(action => [
-        action.actionPlan,
-        action.area,
-        action.discipline,
-        action.assignedTo || 'Not assigned',
-        action.status,
-      ]);
+      // Today's Actions Header
+      doc.setFontSize(16);
+      doc.setTextColor(34, 197, 94);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Today's Actions (${format(new Date(), 'dd MMM yyyy')})`, 105, yPosition, { align: 'center' });
+      yPosition += 15;
 
-      autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: yPosition + 15,
-        theme: 'grid',
-        styles: {
-          fontSize: 9,
-          cellPadding: 3,
-          lineColor: [34, 197, 94], // Green color
-          textColor: 60,
-          lineWidth: 0.1,
-        },
-        headStyles: {
-          fillColor: [34, 197, 94], // Green color
-          textColor: 255,
-          fontSize: 10,
-          fontStyle: 'bold',
-          halign: 'center',
-        },
-        alternateRowStyles: {
-          fillColor: [245, 247, 250],
-        },
-        margin: { left: 20, right: 20 },
+      // Filter actions for today
+      const todayActionsForReport = actions.filter(action => {
+        const actionDate = new Date(action.fromDate);
+        const today = new Date();
+        return actionDate.toDateString() === today.toDateString();
       });
+
+      if (todayActionsForReport.length === 0) {
+        doc.setFontSize(12);
+        doc.setTextColor(107, 114, 128);
+        doc.setFont('helvetica', 'italic');
+        doc.text('No actions scheduled for today', 105, yPosition + 10, { align: 'center' });
+      } else {
+        // Add actions table with modern styling
+        const tableColumn = ['Action Plan', 'Area', 'Discipline', 'Assigned To', 'Status'];
+        const tableRows = todayActionsForReport.map(action => [
+          action.actionPlan.length > 50 ? action.actionPlan.substring(0, 47) + '...' : action.actionPlan,
+          action.area,
+          action.discipline,
+          action.assignedTo || 'Not assigned',
+          action.status,
+        ]);
+
+        autoTable(doc, {
+          head: [tableColumn],
+          body: tableRows,
+          startY: yPosition,
+          theme: 'grid',
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            lineColor: [34, 197, 94],
+            textColor: 60,
+            lineWidth: 0.1,
+          },
+          headStyles: {
+            fillColor: [34, 197, 94],
+            textColor: 255,
+            fontSize: 10,
+            fontStyle: 'bold',
+            halign: 'center',
+          },
+          alternateRowStyles: {
+            fillColor: [245, 247, 250],
+          },
+          columnStyles: {
+            0: { cellWidth: 60 }, // Action Plan
+            1: { cellWidth: 30 }, // Area
+            2: { cellWidth: 30 }, // Discipline
+            3: { cellWidth: 35 }, // Assigned To
+            4: { cellWidth: 25 }, // Status
+          },
+          margin: { left: 20, right: 20 },
+        });
+      }
+
+      // Add summary section at the bottom
+      const finalY = (doc as any).lastAutoTable.finalY || yPosition + 30;
+      
+      // Summary box
+      doc.setFillColor(248, 250, 252);
+      doc.rect(20, finalY + 10, 170, 25, 'F');
+      doc.setDrawColor(203, 213, 225);
+      doc.rect(20, finalY + 10, 170, 25);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(71, 85, 105);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Summary:', 25, finalY + 18);
+      doc.text(`• Total Actions in System: ${actions.length}`, 25, finalY + 24);
+      doc.text(`• Actions for Today: ${todayActionsForReport.length}`, 25, finalY + 30);
 
       // Add footer with page number
       const pageCount = (doc as any).internal.pages.length - 1;
@@ -172,7 +256,7 @@ const Reports: React.FC = () => {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setTextColor(100, 100, 100);
-        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+        doc.text(`Generated on ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
       }
 
       const pdfData = doc.output('datauristring');
@@ -195,7 +279,7 @@ const Reports: React.FC = () => {
         isSameDay(parseISO(report.date), today)
       );
 
-      const success = await generatePDF(todayActions, fileName);
+      const success = await generatePDF(actions, fileName);
 
       if (success) {
         const newReport: Report = {
@@ -252,15 +336,30 @@ const Reports: React.FC = () => {
               <div className="bg-white rounded-xl shadow-md p-5">
                 <h3 className="text-xl font-bold text-gray-800 mb-2">Generate New Report</h3>
                 <p className="text-gray-500 mb-3">{today}</p>
-                <p className="text-gray-700">
-                  <span className="font-medium">New Actions Today:</span> {todayActions.length}
-                </p>
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div>
+                    <p className="text-gray-700">
+                      <span className="font-medium">Total Actions:</span> {actions.length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-700">
+                      <span className="font-medium">Today's Actions:</span> {todayActions.length}
+                    </p>
+                  </div>
+                </div>
                 <div className="h-32 overflow-y-auto border rounded-lg p-3 mt-2 bg-slate-100">
-                  {todayActions.map((action, index) => (
-                    <div key={index} className="text-sm text-gray-600 mb-2">
-                      • {action.actionPlan}
+                  {todayActions.length > 0 ? (
+                    todayActions.map((action, index) => (
+                      <div key={index} className="text-sm text-gray-600 mb-2">
+                        • {action.actionPlan}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-500 italic text-center py-4">
+                      No actions scheduled for today
                     </div>
-                  ))}
+                  )}
                 </div>
                 <button
                   onClick={generateReport}
