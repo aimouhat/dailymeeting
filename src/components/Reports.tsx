@@ -88,7 +88,7 @@ const Reports: React.FC = () => {
         
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
             color: #333;
             line-height: 1.6;
             padding: 20px;
@@ -101,6 +101,7 @@ const Reports: React.FC = () => {
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
+            border: 2px solid #e2e8f0;
         }
         
         .header {
@@ -167,6 +168,7 @@ const Reports: React.FC = () => {
         
         .content {
             padding: 40px;
+            background: white;
         }
         
         .kpi-section {
@@ -196,7 +198,7 @@ const Reports: React.FC = () => {
         
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -311,6 +313,7 @@ const Reports: React.FC = () => {
             color: #1e3c72;
             max-width: 300px;
             word-wrap: break-word;
+            line-height: 1.4;
         }
         
         .tag {
@@ -376,6 +379,15 @@ const Reports: React.FC = () => {
             .container {
                 box-shadow: none;
                 border-radius: 0;
+                border: none;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .kpi-card.total {
+                grid-column: span 4;
             }
         }
     </style>
@@ -476,16 +488,14 @@ const Reports: React.FC = () => {
       const htmlContent = generateHTMLReport(actions, fileName);
       
       // Create a new window to display and print the report
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open('', '_blank', 'width=1200,height=800');
       if (printWindow) {
         printWindow.document.write(htmlContent);
         printWindow.document.close();
         
-        // Wait for content to load then trigger print
+        // Wait for content to load then focus the window
         printWindow.onload = () => {
-          setTimeout(() => {
-            printWindow.print();
-          }, 500);
+          printWindow.focus();
         };
       }
 
@@ -509,10 +519,8 @@ const Reports: React.FC = () => {
       }
       setHistoricalReports(updatedReports);
       
-      alert('PDF report generated successfully! Check your browser\'s print dialog.');
     } catch (error) {
       console.error('Error in generateReport:', error);
-      alert('An error occurred while generating the report.');
     } finally {
       setIsGenerating(false);
     }
