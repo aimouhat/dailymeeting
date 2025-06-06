@@ -251,18 +251,18 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Action List - MOVED BEFORE FILTERS */}
-        <div className="w-full mb-4 sm:mb-6">
-          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Action List</h2>
-          <ActionTable actions={filteredActions} />
-        </div>
-
-        {/* Filter Bar - MOVED AFTER ACTION LIST */}
+        {/* Filter Bar - Full width */}
         <div className="mb-4 sm:mb-6">
           <FilterBar 
             onFilter={filterActions} 
             areas={uniqueAreas}
           />
+        </div>
+
+        {/* Action List - Full width */}
+        <div className="w-full">
+          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Action List</h2>
+          <ActionTable actions={filteredActions} />
         </div>
       </main>
 
