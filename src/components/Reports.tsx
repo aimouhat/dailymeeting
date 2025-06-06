@@ -318,7 +318,7 @@ const Reports: React.FC = () => {
         });
       }
 
-      // Footer on all pages (but properly spaced from content)
+      // Simplified Footer on all pages (removed CLASSIFICATION and ONLINE)
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -332,20 +332,12 @@ const Reports: React.FC = () => {
         doc.setLineWidth(0.5);
         doc.line(margin, pageHeight - footerHeight, pageWidth - margin, pageHeight - footerHeight);
         
-        // Footer text
+        // Simplified footer text - only generation date and page number
         doc.setFontSize(8);
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'normal');
         doc.text(`GENERATED: ${format(new Date(), 'dd/MM/yyyy HH:mm')} UTC`, margin, pageHeight - 12);
-        doc.text(`CLASSIFICATION: INTERNAL`, pageWidth/2, pageHeight - 12, { align: 'center' });
         doc.text(`PAGE ${i} OF ${pageCount}`, pageWidth - margin, pageHeight - 12, { align: 'right' });
-        
-        // System status indicator
-        doc.setFillColor(16, 185, 129);
-        doc.circle(pageWidth - margin - 15, pageHeight - 8, 1, 'F');
-        doc.setFontSize(6);
-        doc.setTextColor(16, 185, 129);
-        doc.text('ONLINE', pageWidth - margin - 20, pageHeight - 8, { align: 'right' });
       }
 
       // Save the PDF directly
