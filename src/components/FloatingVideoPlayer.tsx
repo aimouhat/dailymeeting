@@ -7,9 +7,22 @@ const FloatingVideoPlayer: React.FC = () => {
   const [position, setPosition] = useState({ x: 20, y: 20 });
   const [isMinimized, setIsMinimized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const dragStartPos = useRef({ x: 0, y: 0 });
   const playerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.target instanceof HTMLElement && e.target.closest('.drag-handle')) {
@@ -67,6 +80,11 @@ const FloatingVideoPlayer: React.FC = () => {
     console.error('Video error:', e);
     setError('Video file not found. Please add a video file named "4.mp4" to the public/videos directory.');
   };
+
+  // Don't render on mobile devices
+  if (isMobile) {
+    return null;
+  }
 
   return (
     <div
