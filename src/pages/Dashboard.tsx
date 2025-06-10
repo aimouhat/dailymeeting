@@ -160,12 +160,10 @@ const Dashboard: React.FC = () => {
       <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 flex-grow">
         {/* Mobile Dashboard Title - Simplified */}
         <div className="flex justify-between items-center mb-4 lg:hidden">
-          <h1 className="text-lg font-bold text-gray-900">Dashboard</h1>
         </div>
 
         {/* Desktop Dashboard Title - Simplified */}
         <div className="hidden lg:flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
         </div>
 
         {/* Mobile Layout - Stack vertically */}
