@@ -19,6 +19,13 @@ interface ActionContextType {
   }) => void;
   filteredActions: Action[];
   lastUpdated: Date;
+  refreshData: () => Promise<void>;
+  currentFilters: {
+    dateRange: { start: Date | null; end: Date | null };
+    searchTerm: string;
+    status: string;
+    area: string;
+  };
 }
 
 const ActionContext = createContext<ActionContextType | undefined>(undefined);
@@ -33,34 +40,49 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
   const [areaStats, setAreaStats] = useState<AreaStats[]>([]);
   const [statusStats, setStatusStats] = useState<StatusStats[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  
+  // Store current filters to preserve them during data refresh
+  const [currentFilters, setCurrentFilters] = useState({
+    dateRange: { start: null as Date | null, end: null as Date | null },
+    searchTerm: '',
+    status: 'auto-filter',
+    area: ''
+  });
 
   // Load initial data
   useEffect(() => {
-    const loadActions = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await mockDataService.getAllActions();
-        setActions(data);
-        
-        // Apply auto-filter by default (exclude "Done" actions)
-        const autoFiltered = data.filter(action => action.status !== 'Done');
-        setFilteredActions(autoFiltered);
-        
-        calculateStats(data);
-        setLastUpdated(new Date());
-      } catch (err) {
-        console.error('Error loading actions:', err);
-        setError('Failed to load actions');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadActions();
+  }, []);
 
-    // Set up periodic refresh to check for overdue actions
-    const refreshInterval = setInterval(loadActions, 60000); // Check every minute
+  const loadActions = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await mockDataService.getAllActions();
+      setActions(data);
+      calculateStats(data);
+      setLastUpdated(new Date());
+      
+      // Reapply current filters to the new data
+      applyFiltersToData(data, currentFilters);
+    } catch (err) {
+      console.error('Error loading actions:', err);
+      setError('Failed to load actions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Manual refresh function that preserves filters
+  const refreshData = async () => {
+    await loadActions();
+  };
+
+  // Set up periodic refresh without page reload (every 5 minutes)
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      refreshData();
+    }, 300000); // 5 minutes instead of 1 minute to reduce frequency
 
     return () => {
       clearInterval(refreshInterval);
@@ -73,21 +95,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const newActions = [...prev, action];
         calculateStats(newActions);
+        applyFiltersToData(newActions, currentFilters);
         return newActions;
       });
-      
-      // Only add to filtered actions if it's not "Done" (for auto-filter)
-      setFilteredActions(prev => {
-        // Check if we're currently auto-filtering (if filtered actions don't include "Done" actions)
-        const hasCompletedActions = prev.some(a => a.status === 'Done');
-        if (!hasCompletedActions && action.status !== 'Done') {
-          return [...prev, action];
-        } else if (hasCompletedActions) {
-          return [...prev, action];
-        }
-        return prev;
-      });
-      
       setLastUpdated(new Date());
     };
 
@@ -95,9 +105,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const updatedActions = prev.map(a => a.id === action.id ? action : a);
         calculateStats(updatedActions);
+        applyFiltersToData(updatedActions, currentFilters);
         return updatedActions;
       });
-      setFilteredActions(prev => prev.map(a => a.id === action.id ? action : a));
       setLastUpdated(new Date());
     };
 
@@ -105,9 +115,9 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       setActions(prev => {
         const updatedActions = prev.filter(a => a.id !== id);
         calculateStats(updatedActions);
+        applyFiltersToData(updatedActions, currentFilters);
         return updatedActions;
       });
-      setFilteredActions(prev => prev.filter(a => a.id !== id));
       setLastUpdated(new Date());
     };
 
@@ -116,7 +126,7 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
       mockDataService.onActionUpdated = undefined;
       mockDataService.onActionDeleted = undefined;
     };
-  }, []);
+  }, [currentFilters]);
 
   const calculateStats = (actions: Action[]) => {
     // Calculate area stats
@@ -157,72 +167,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
     setStatusStats(statusStats);
   };
 
-  const addAction = async (action: Omit<Action, 'id'>) => {
-    try {
-      const newAction = await mockDataService.addAction(action);
-      setActions(prev => {
-        const updatedActions = [...prev, newAction];
-        calculateStats(updatedActions);
-        return updatedActions;
-      });
-      
-      // Only add to filtered actions if it matches current filter
-      setFilteredActions(prev => {
-        const hasCompletedActions = prev.some(a => a.status === 'Done');
-        if (!hasCompletedActions && newAction.status !== 'Done') {
-          return [...prev, newAction];
-        } else if (hasCompletedActions) {
-          return [...prev, newAction];
-        }
-        return prev;
-      });
-      
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error('Error adding action:', err);
-      throw err;
-    }
-  };
-
-  const updateAction = async (id: number, updates: Partial<Action>) => {
-    try {
-      const updatedAction = await mockDataService.updateAction(id, updates);
-      setActions(prev => {
-        const updatedActions = prev.map(a => a.id === id ? updatedAction : a);
-        calculateStats(updatedActions);
-        return updatedActions;
-      });
-      setFilteredActions(prev => prev.map(a => a.id === id ? updatedAction : a));
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error('Error updating action:', err);
-      throw err;
-    }
-  };
-
-  const deleteAction = async (id: number) => {
-    try {
-      await mockDataService.deleteAction(id);
-      setActions(prev => {
-        const updatedActions = prev.filter(a => a.id !== id);
-        calculateStats(updatedActions);
-        return updatedActions;
-      });
-      setFilteredActions(prev => prev.filter(a => a.id !== id));
-      setLastUpdated(new Date());
-    } catch (err) {
-      console.error('Error deleting action:', err);
-      throw err;
-    }
-  };
-
-  const filterActions = (filters: {
-    dateRange?: { start: Date | null; end: Date | null };
-    searchTerm?: string;
-    status?: string;
-    area?: string;
-  }) => {
-    let filtered = [...actions];
+  const applyFiltersToData = (data: Action[], filters: typeof currentFilters) => {
+    let filtered = [...data];
 
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
@@ -262,6 +208,72 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
     setFilteredActions(filtered);
   };
 
+  const addAction = async (action: Omit<Action, 'id'>) => {
+    try {
+      const newAction = await mockDataService.addAction(action);
+      setActions(prev => {
+        const updatedActions = [...prev, newAction];
+        calculateStats(updatedActions);
+        applyFiltersToData(updatedActions, currentFilters);
+        return updatedActions;
+      });
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error adding action:', err);
+      throw err;
+    }
+  };
+
+  const updateAction = async (id: number, updates: Partial<Action>) => {
+    try {
+      const updatedAction = await mockDataService.updateAction(id, updates);
+      setActions(prev => {
+        const updatedActions = prev.map(a => a.id === id ? updatedAction : a);
+        calculateStats(updatedActions);
+        applyFiltersToData(updatedActions, currentFilters);
+        return updatedActions;
+      });
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error updating action:', err);
+      throw err;
+    }
+  };
+
+  const deleteAction = async (id: number) => {
+    try {
+      await mockDataService.deleteAction(id);
+      setActions(prev => {
+        const updatedActions = prev.filter(a => a.id !== id);
+        calculateStats(updatedActions);
+        applyFiltersToData(updatedActions, currentFilters);
+        return updatedActions;
+      });
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error deleting action:', err);
+      throw err;
+    }
+  };
+
+  const filterActions = (filters: {
+    dateRange?: { start: Date | null; end: Date | null };
+    searchTerm?: string;
+    status?: string;
+    area?: string;
+  }) => {
+    // Update current filters
+    const newFilters = {
+      dateRange: filters.dateRange || { start: null, end: null },
+      searchTerm: filters.searchTerm || '',
+      status: filters.status || 'auto-filter',
+      area: filters.area || ''
+    };
+    
+    setCurrentFilters(newFilters);
+    applyFiltersToData(actions, newFilters);
+  };
+
   return (
     <ActionContext.Provider
       value={{
@@ -276,6 +288,8 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
         filterActions,
         filteredActions,
         lastUpdated,
+        refreshData,
+        currentFilters,
       }}
     >
       {children}
