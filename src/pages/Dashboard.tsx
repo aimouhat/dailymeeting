@@ -158,13 +158,6 @@ const Dashboard: React.FC = () => {
       </header>
 
       <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 flex-grow">
-        {/* Mobile Dashboard Title - Simplified */}
-        <div className="flex justify-between items-center mb-4 lg:hidden">
-        </div>
-
-        {/* Desktop Dashboard Title - Simplified */}
-        <div className="hidden lg:flex justify-between items-center mb-6">
-        </div>
 
         {/* Mobile Layout - Stack vertically */}
         <div className="lg:hidden space-y-4 sm:space-y-6 mb-6 sm:mb-8">
