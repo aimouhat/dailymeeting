@@ -81,6 +81,15 @@ const Dashboard: React.FC = () => {
                 <p className="text-xs text-blue-200">{currentDate}</p>
               </div>
             </div>
+
+            {/* QR Code and Last Updated - Mobile */}
+            <div className="flex items-center space-x-2 mr-2">
+              <div className="text-xs text-blue-200 text-right">
+                <div>Last update:</div>
+                <div>{lastUpdated.toLocaleTimeString()}</div>
+              </div>
+              <NetworkInfo />
+            </div>
             
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -106,14 +115,18 @@ const Dashboard: React.FC = () => {
                 <p className="text-sm text-blue-200">{currentDate}</p>
               </div>
             </div>
+
+            {/* QR Code and Last Updated - Desktop Center */}
+            <div className="flex items-center space-x-4">
+              <div className="text-center">
+                <div className="text-sm text-blue-200">Last updated:</div>
+                <div className="text-sm font-medium text-white">{lastUpdated.toLocaleTimeString()}</div>
+              </div>
+              <div className="h-8 w-px bg-blue-700"></div>
+              <NetworkInfo />
+            </div>
             
             <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <h2 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-200">
-                  Integrated Exploratory Mines
-                </h2>
-                <p className="text-sm text-blue-200">Daily Actions Tracking System</p>
-              </div>
               <Reports />
               <Link 
                 to="/form" 
@@ -125,7 +138,7 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Menu - Clean version without extra text */}
+          {/* Mobile Menu */}
           {isMobileMenuOpen && (
             <div className="lg:hidden border-t border-blue-700 py-4 space-y-3">
               <div className="flex flex-col space-y-2">
@@ -145,26 +158,14 @@ const Dashboard: React.FC = () => {
       </header>
 
       <main className="w-full px-2 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 flex-grow">
-        {/* Mobile Dashboard Title with Last Update and QR */}
+        {/* Mobile Dashboard Title - Simplified */}
         <div className="flex justify-between items-center mb-4 lg:hidden">
           <h1 className="text-lg font-bold text-gray-900">Dashboard</h1>
-          <div className="flex items-center space-x-3">
-            <div className="text-xs text-gray-500">
-              Last update: {lastUpdated.toLocaleTimeString()}
-            </div>
-            <NetworkInfo />
-          </div>
         </div>
 
-        {/* Desktop Dashboard Title */}
+        {/* Desktop Dashboard Title - Simplified */}
         <div className="hidden lg:flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <NetworkInfo />
-            <div className="text-sm text-gray-500">
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </div>
-          </div>
         </div>
 
         {/* Mobile Layout - Stack vertically */}
