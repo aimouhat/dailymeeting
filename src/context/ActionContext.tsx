@@ -19,7 +19,6 @@ interface ActionContextType {
   }) => void;
   filteredActions: Action[];
   lastUpdated: Date;
-  refreshData: () => Promise<void>;
   currentFilters: {
     dateRange: { start: Date | null; end: Date | null };
     searchTerm: string;
@@ -73,21 +72,26 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Manual refresh function that preserves filters
-  const refreshData = async () => {
-    await loadActions();
-  };
-
-  // Set up periodic refresh without page reload (every 5 minutes)
+  // Auto refresh every 30 seconds - data only, no page reload
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      refreshData();
-    }, 300000); // 5 minutes instead of 1 minute to reduce frequency
+    const refreshInterval = setInterval(async () => {
+      try {
+        const data = await mockDataService.getAllActions();
+        setActions(data);
+        calculateStats(data);
+        setLastUpdated(new Date());
+        
+        // Reapply current filters to the new data
+        applyFiltersToData(data, currentFilters);
+      } catch (err) {
+        console.error('Error during auto-refresh:', err);
+      }
+    }, 30000); // 30 seconds
 
     return () => {
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [currentFilters]);
 
   // Set up mock WebSocket event handlers
   useEffect(() => {
@@ -288,7 +292,6 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
         filterActions,
         filteredActions,
         lastUpdated,
-        refreshData,
         currentFilters,
       }}
     >

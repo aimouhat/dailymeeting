@@ -9,7 +9,7 @@ import VideoPlayer from '../components/VideoPlayer';
 import FloatingVideoPlayer from '../components/FloatingVideoPlayer';
 import NetworkInfo from '../components/NetworkInfo';
 import Footer from '../components/Footer';
-import { PlusCircle, RotateCw, Menu, X, RefreshCw } from 'lucide-react';
+import { PlusCircle, RotateCw, Menu, X } from 'lucide-react';
 import { format } from 'date-fns';
 import Reports from '../components/Reports';
 
@@ -22,7 +22,6 @@ const Dashboard: React.FC = () => {
     actions,
     filterActions,
     lastUpdated,
-    refreshData,
     currentFilters
   } = useActions();
   
@@ -30,7 +29,6 @@ const Dashboard: React.FC = () => {
   const [showVideo, setShowVideo] = useState(true);
   const [transcribedText, setTranscribedText] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const currentDate = format(new Date(), 'dd MMM yyyy');
 
   useEffect(() => {
@@ -42,17 +40,6 @@ const Dashboard: React.FC = () => {
 
   const handleTranscriptionComplete = (text: string) => {
     setTranscribedText(text);
-  };
-
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refreshData();
-    } catch (error) {
-      console.error('Error refreshing data:', error);
-    } finally {
-      setIsRefreshing(false);
-    }
   };
 
   if (isLoading) {
@@ -96,16 +83,8 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* QR Code, Last Updated, and Refresh - Mobile */}
+            {/* QR Code and Last Updated - Mobile */}
             <div className="flex items-center space-x-2 mr-2">
-              <button
-                onClick={handleManualRefresh}
-                disabled={isRefreshing}
-                className="p-1 text-blue-200 hover:text-white transition-colors"
-                title="Refresh data"
-              >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </button>
               <div className="text-xs text-blue-200 text-right">
                 <div>Last update:</div>
                 <div>{lastUpdated.toLocaleTimeString()}</div>
@@ -138,16 +117,8 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* QR Code, Last Updated, and Refresh - Desktop Center */}
+            {/* QR Code and Last Updated - Desktop Center */}
             <div className="flex items-center space-x-4">
-              <button
-                onClick={handleManualRefresh}
-                disabled={isRefreshing}
-                className="p-2 text-blue-200 hover:text-white transition-colors rounded-md hover:bg-blue-800"
-                title="Refresh data"
-              >
-                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </button>
               <div className="text-center">
                 <div className="text-sm text-blue-200">Last updated:</div>
                 <div className="text-sm font-medium text-white">{lastUpdated.toLocaleTimeString()}</div>
