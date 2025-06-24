@@ -9,7 +9,7 @@ import ActionTimeline from '../components/ActionTimeline';
 import FloatingVideoPlayer from '../components/FloatingVideoPlayer';
 import NetworkInfo from '../components/NetworkInfo';
 import Footer from '../components/Footer';
-import { PlusCircle, Menu, X, Video, TrendingUp, Eye, EyeOff } from 'lucide-react';
+import { PlusCircle, Menu, X, Video, TrendingUp, Eye, EyeOff, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import Reports from '../components/Reports';
 
@@ -29,6 +29,7 @@ const Dashboard: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showTimeline, setShowTimeline] = useState(true);
   const [showVideo, setShowVideo] = useState(true);
+  const [showTimeManager, setShowTimeManager] = useState(true);
   const currentDate = format(new Date(), 'dd MMM yyyy');
 
   useEffect(() => {
@@ -59,7 +60,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <FloatingVideoPlayer />
+      {showTimeManager && <FloatingVideoPlayer />}
       <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white shadow-lg">
         <div className="max-w-full mx-auto px-2 sm:px-4">
           {/* Mobile Header */}
@@ -150,6 +151,18 @@ const Dashboard: React.FC = () => {
                   {showTimeline ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   <span>Timeline</span>
                 </button>
+                <button
+                  onClick={() => setShowTimeManager(!showTimeManager)}
+                  className={`flex items-center space-x-1 px-2 py-1 rounded text-xs transition-all duration-200 ${
+                    showTimeManager 
+                      ? 'bg-blue-600 text-white shadow-sm' 
+                      : 'text-blue-200 hover:text-white hover:bg-blue-800'
+                  }`}
+                  title={showTimeManager ? 'Hide Time Manager' : 'Show Time Manager'}
+                >
+                  {showTimeManager ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <span>Time Manager</span>
+                </button>
               </div>
               
               <Reports />
@@ -178,6 +191,17 @@ const Dashboard: React.FC = () => {
                 >
                   {showTimeline ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   <span>Timeline</span>
+                </button>
+                <button
+                  onClick={() => setShowTimeManager(!showTimeManager)}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                    showTimeManager 
+                      ? 'bg-blue-600 text-white shadow-sm' 
+                      : 'bg-blue-950/50 text-blue-200 hover:text-white hover:bg-blue-800'
+                  }`}
+                >
+                  {showTimeManager ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <span>Time Manager</span>
                 </button>
               </div>
               
