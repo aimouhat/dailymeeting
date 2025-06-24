@@ -174,17 +174,17 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Layout - 3 Block Layout */}
+        {/* Desktop Layout - Three sections */}
         <div className="hidden lg:block mb-8 space-y-6">
-          {/* Top Row - Two blocks side by side */}
+          {/* Status KPIs - Full width */}
+          <div className="w-full">
+            <StatusKPIs stats={statusStats} />
+          </div>
+          
+          {/* Meeting Video and Timeline - Side by side */}
           <div className="grid grid-cols-12 gap-6">
-            {/* Status KPIs - Takes 8 columns (left block) */}
-            <div className="col-span-8">
-              <StatusKPIs stats={statusStats} />
-            </div>
-            
-            {/* Meeting Video Section - Takes 4 columns (right block) */}
-            <div className="col-span-4">
+            {/* Meeting Video Section - Takes 5 columns */}
+            <div className="col-span-5">
               <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
                 <div className="flex items-center p-4 border-b flex-shrink-0">
                   <Video className="w-5 h-5 text-blue-600 mr-2" />
@@ -197,16 +197,18 @@ const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
-          
-          {/* Bottom Row - Timeline full width */}
-          <div className="w-full">
-            <div className="bg-white rounded-lg shadow-md">
-              <div className="flex items-center p-4 border-b">
-                <h2 className="text-lg font-semibold">Actions Timeline</h2>
-              </div>
-              <div className="p-4">
-                <ActionTimeline actions={actions} />
+            
+            {/* Timeline Section - Takes 7 columns */}
+            <div className="col-span-7">
+              <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
+                <div className="flex items-center p-4 border-b flex-shrink-0">
+                  <h2 className="text-lg font-semibold">Actions Timeline</h2>
+                </div>
+                <div className="p-4 flex-1 overflow-hidden">
+                  <div className="h-full overflow-y-auto">
+                    <ActionTimeline actions={actions} />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
