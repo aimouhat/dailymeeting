@@ -4,13 +4,12 @@ import { useActions } from '../context/ActionContext';
 import ActionTable from '../components/ActionTable';
 import StatusKPIs from '../components/StatusKPIs';
 import FilterBar from '../components/FilterBar';
-import AudioRecorder from '../components/AudioRecorder';
 import VideoPlayer from '../components/VideoPlayer';
 import ActionTimeline from '../components/ActionTimeline';
 import FloatingVideoPlayer from '../components/FloatingVideoPlayer';
 import NetworkInfo from '../components/NetworkInfo';
 import Footer from '../components/Footer';
-import { PlusCircle, Menu, X, Video, TrendingUp } from 'lucide-react';
+import { PlusCircle, Menu, X, Video } from 'lucide-react';
 import { format } from 'date-fns';
 import Reports from '../components/Reports';
 
@@ -27,8 +26,6 @@ const Dashboard: React.FC = () => {
   } = useActions();
   
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
-  const [showVideo, setShowVideo] = useState(false); // Default to timeline
-  const [transcribedText, setTranscribedText] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const currentDate = format(new Date(), 'dd MMM yyyy');
 
@@ -38,10 +35,6 @@ const Dashboard: React.FC = () => {
       setUniqueAreas(areas);
     }
   }, [actions]);
-
-  const handleTranscriptionComplete = (text: string) => {
-    setTranscribedText(text);
-  };
 
   if (isLoading) {
     return (
@@ -168,66 +161,54 @@ const Dashboard: React.FC = () => {
             <StatusKPIs stats={statusStats} />
           </div>
           
-          {/* Timeline Section - Full width on mobile */}
+          {/* Timeline Section - Full width on mobile (no video on mobile) */}
           <div className="w-full">
             <div className="bg-white rounded-lg shadow-md">
-              <div className="flex items-center justify-between p-3 sm:p-4 border-b">
-                <h2 className="text-base sm:text-lg font-semibold">
-                  {showVideo ? 'Meeting Video' : 'Actions Timeline'}
-                </h2>
-                <button
-                  onClick={() => setShowVideo(!showVideo)}
-                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded flex items-center space-x-1"
-                >
-                  {showVideo ? <TrendingUp className="w-4 h-4" /> : <Video className="w-4 h-4" />}
-                  <span>Switch to {showVideo ? 'Timeline' : 'Video'}</span>
-                </button>
+              <div className="flex items-center p-3 sm:p-4 border-b">
+                <h2 className="text-base sm:text-lg font-semibold">Actions Timeline</h2>
               </div>
               <div className="p-3 sm:p-4">
-                {showVideo ? (
-                  <div className="w-full">
-                    <VideoPlayer folderPath="/videos" />
-                  </div>
-                ) : (
-                  <ActionTimeline actions={actions} />
-                )}
+                <ActionTimeline actions={actions} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Desktop Layout - Side by side with SAME HEIGHT */}
-        <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 mb-8">
-          {/* Status KPIs - Takes 7 columns */}
-          <div className="col-span-7">
+        {/* Desktop Layout - Three sections */}
+        <div className="hidden lg:block mb-8 space-y-6">
+          {/* Status KPIs - Full width */}
+          <div className="w-full">
             <StatusKPIs stats={statusStats} />
           </div>
           
-          {/* Timeline/Video Section - Takes 5 columns with EXACT SAME HEIGHT */}
-          <div className="col-span-5">
-            <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
-                <h2 className="text-lg font-semibold">
-                  {showVideo ? 'Meeting Video' : 'Actions Timeline'}
-                </h2>
-                <button
-                  onClick={() => setShowVideo(!showVideo)}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
-                >
-                  {showVideo ? <TrendingUp className="w-4 h-4" /> : <Video className="w-4 h-4" />}
-                  <span>Switch to {showVideo ? 'Timeline' : 'Video'}</span>
-                </button>
-              </div>
-              <div className="p-4 flex-1 flex flex-col justify-center overflow-hidden">
-                {showVideo ? (
+          {/* Meeting Video and Timeline - Side by side */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Meeting Video Section - Takes 5 columns */}
+            <div className="col-span-5">
+              <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
+                <div className="flex items-center p-4 border-b flex-shrink-0">
+                  <Video className="w-5 h-5 text-blue-600 mr-2" />
+                  <h2 className="text-lg font-semibold">Meeting Video</h2>
+                </div>
+                <div className="p-4 flex-1 flex flex-col justify-center">
                   <div className="h-full flex items-center justify-center">
                     <VideoPlayer folderPath="/videos" />
                   </div>
-                ) : (
+                </div>
+              </div>
+            </div>
+            
+            {/* Timeline Section - Takes 7 columns */}
+            <div className="col-span-7">
+              <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
+                <div className="flex items-center p-4 border-b flex-shrink-0">
+                  <h2 className="text-lg font-semibold">Actions Timeline</h2>
+                </div>
+                <div className="p-4 flex-1 overflow-hidden">
                   <div className="h-full overflow-y-auto">
                     <ActionTimeline actions={actions} />
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
