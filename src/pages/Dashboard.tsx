@@ -174,39 +174,39 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Layout - 3 Block Layout */}
+        {/* Desktop Layout - Your Requested 3 Block Layout */}
         <div className="hidden lg:block mb-8 space-y-6">
-          {/* Top Row - Two blocks side by side */}
-          <div className="grid grid-cols-12 gap-6">
-            {/* Status KPIs - Takes 8 columns (left block) */}
-            <div className="col-span-8">
+          {/* Top Row - Status KPIs (left) and Timeline (right) */}
+          <div className="grid grid-cols-12 gap-6 h-80">
+            {/* Status KPIs - Takes 6 columns (left block) */}
+            <div className="col-span-6">
               <StatusKPIs stats={statusStats} />
             </div>
             
-            {/* Meeting Video Section - Takes 4 columns (right block) */}
-            <div className="col-span-4">
+            {/* Timeline Section - Takes 6 columns (right block) */}
+            <div className="col-span-6">
               <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
                 <div className="flex items-center p-4 border-b flex-shrink-0">
-                  <Video className="w-5 h-5 text-blue-600 mr-2" />
-                  <h2 className="text-lg font-semibold">Meeting Video</h2>
+                  <h2 className="text-lg font-semibold">Actions Timeline</h2>
                 </div>
-                <div className="p-4 flex-1 flex flex-col justify-center">
-                  <div className="h-full flex items-center justify-center">
-                    <VideoPlayer folderPath="/videos" />
-                  </div>
+                <div className="p-4 flex-1">
+                  <ActionTimeline actions={actions} />
                 </div>
               </div>
             </div>
           </div>
           
-          {/* Bottom Row - Timeline full width */}
+          {/* Bottom Row - Video full width */}
           <div className="w-full">
             <div className="bg-white rounded-lg shadow-md">
               <div className="flex items-center p-4 border-b">
-                <h2 className="text-lg font-semibold">Actions Timeline</h2>
+                <Video className="w-5 h-5 text-blue-600 mr-2" />
+                <h2 className="text-lg font-semibold">Meeting Video</h2>
               </div>
               <div className="p-4">
-                <ActionTimeline actions={actions} />
+                <div className="flex justify-center">
+                  <VideoPlayer folderPath="/videos" />
+                </div>
               </div>
             </div>
           </div>
