@@ -9,7 +9,7 @@ import ActionTimeline from '../components/ActionTimeline';
 import FloatingVideoPlayer from '../components/FloatingVideoPlayer';
 import NetworkInfo from '../components/NetworkInfo';
 import Footer from '../components/Footer';
-import { PlusCircle, Menu, X, Video } from 'lucide-react';
+import { PlusCircle, Menu, X, Video, TrendingUp, Eye, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
 import Reports from '../components/Reports';
 
@@ -27,6 +27,8 @@ const Dashboard: React.FC = () => {
   
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showTimeline, setShowTimeline] = useState(true);
+  const [showVideo, setShowVideo] = useState(true);
   const currentDate = format(new Date(), 'dd MMM yyyy');
 
   useEffect(() => {
@@ -122,6 +124,34 @@ const Dashboard: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* View Toggle Buttons */}
+              <div className="flex items-center space-x-2 bg-blue-950/50 rounded-lg p-1">
+                <button
+                  onClick={() => setShowVideo(!showVideo)}
+                  className={`flex items-center space-x-1 px-2 py-1 rounded text-xs transition-all duration-200 ${
+                    showVideo 
+                      ? 'bg-blue-600 text-white shadow-sm' 
+                      : 'text-blue-200 hover:text-white hover:bg-blue-800'
+                  }`}
+                  title={showVideo ? 'Hide Video' : 'Show Video'}
+                >
+                  {showVideo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <span>Video</span>
+                </button>
+                <button
+                  onClick={() => setShowTimeline(!showTimeline)}
+                  className={`flex items-center space-x-1 px-2 py-1 rounded text-xs transition-all duration-200 ${
+                    showTimeline 
+                      ? 'bg-blue-600 text-white shadow-sm' 
+                      : 'text-blue-200 hover:text-white hover:bg-blue-800'
+                  }`}
+                  title={showTimeline ? 'Hide Timeline' : 'Show Timeline'}
+                >
+                  {showTimeline ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <span>Timeline</span>
+                </button>
+              </div>
+              
               <Reports />
               <Link 
                 to="/form" 
@@ -136,6 +166,21 @@ const Dashboard: React.FC = () => {
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
             <div className="lg:hidden border-t border-blue-700 py-4 space-y-3">
+              {/* Mobile View Toggles */}
+              <div className="flex justify-center space-x-2 mb-3">
+                <button
+                  onClick={() => setShowTimeline(!showTimeline)}
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                    showTimeline 
+                      ? 'bg-blue-600 text-white shadow-sm' 
+                      : 'bg-blue-950/50 text-blue-200 hover:text-white hover:bg-blue-800'
+                  }`}
+                >
+                  {showTimeline ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <span>Timeline</span>
+                </button>
+              </div>
+              
               <div className="flex flex-col space-y-2">
                 <Reports />
                 <Link 
@@ -161,57 +206,98 @@ const Dashboard: React.FC = () => {
             <StatusKPIs stats={statusStats} />
           </div>
           
-          {/* Timeline Section - Full width on mobile (no video on mobile) */}
-          <div className="w-full">
-            <div className="bg-white rounded-lg shadow-md">
-              <div className="flex items-center p-3 sm:p-4 border-b">
-                <h2 className="text-base sm:text-lg font-semibold">Actions Timeline</h2>
-              </div>
-              <div className="p-3 sm:p-4">
-                <ActionTimeline actions={actions} />
+          {/* Timeline Section - Full width on mobile (conditionally shown) */}
+          {showTimeline && (
+            <div className="w-full">
+              <div className="bg-white rounded-lg shadow-md">
+                <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                    <h2 className="text-base sm:text-lg font-semibold">Actions Timeline</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowTimeline(false)}
+                    className="text-gray-400 hover:text-gray-600 p-1"
+                    title="Hide Timeline"
+                  >
+                    <EyeOff className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="p-3 sm:p-4">
+                  <ActionTimeline actions={actions} />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Desktop Layout - Three sections */}
+        {/* Desktop Layout - Conditional sections */}
         <div className="hidden lg:block mb-8 space-y-6">
           {/* Status KPIs - Full width */}
           <div className="w-full">
             <StatusKPIs stats={statusStats} />
           </div>
           
-          {/* Meeting Video and Timeline - Side by side */}
-          <div className="grid grid-cols-12 gap-6">
-            {/* Meeting Video Section - Takes 5 columns */}
-            <div className="col-span-5">
-              <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
-                <div className="flex items-center p-4 border-b flex-shrink-0">
-                  <Video className="w-5 h-5 text-blue-600 mr-2" />
-                  <h2 className="text-lg font-semibold">Meeting Video</h2>
-                </div>
-                <div className="p-4 flex-1 flex flex-col justify-center">
-                  <div className="h-full flex items-center justify-center">
-                    <VideoPlayer folderPath="/videos" />
+          {/* Meeting Video and Timeline - Conditional display */}
+          {(showVideo || showTimeline) && (
+            <div className={`grid gap-6 ${
+              showVideo && showTimeline 
+                ? 'grid-cols-12' 
+                : 'grid-cols-1'
+            }`}>
+              {/* Meeting Video Section - Conditional */}
+              {showVideo && (
+                <div className={showTimeline ? 'col-span-5' : 'col-span-12'}>
+                  <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
+                    <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+                      <div className="flex items-center space-x-2">
+                        <Video className="w-5 h-5 text-blue-600" />
+                        <h2 className="text-lg font-semibold">Meeting Video</h2>
+                      </div>
+                      <button
+                        onClick={() => setShowVideo(false)}
+                        className="text-gray-400 hover:text-gray-600 p-1"
+                        title="Hide Video"
+                      >
+                        <EyeOff className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col justify-center">
+                      <div className="h-full flex items-center justify-center">
+                        <VideoPlayer folderPath="/videos" />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Timeline Section - Takes 7 columns */}
-            <div className="col-span-7">
-              <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
-                <div className="flex items-center p-4 border-b flex-shrink-0">
-                  <h2 className="text-lg font-semibold">Actions Timeline</h2>
-                </div>
-                <div className="p-4 flex-1 overflow-hidden">
-                  <div className="h-full overflow-y-auto">
-                    <ActionTimeline actions={actions} />
+              )}
+              
+              {/* Timeline Section - Conditional */}
+              {showTimeline && (
+                <div className={showVideo ? 'col-span-7' : 'col-span-12'}>
+                  <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
+                    <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="w-5 h-5 text-blue-600" />
+                        <h2 className="text-lg font-semibold">Actions Timeline</h2>
+                      </div>
+                      <button
+                        onClick={() => setShowTimeline(false)}
+                        className="text-gray-400 hover:text-gray-600 p-1"
+                        title="Hide Timeline"
+                      >
+                        <EyeOff className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="p-4 flex-1 overflow-hidden">
+                      <div className="h-full overflow-y-auto">
+                        <ActionTimeline actions={actions} />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Filter Bar - Full width */}
