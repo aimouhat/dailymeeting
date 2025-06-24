@@ -6,10 +6,11 @@ import StatusKPIs from '../components/StatusKPIs';
 import FilterBar from '../components/FilterBar';
 import AudioRecorder from '../components/AudioRecorder';
 import VideoPlayer from '../components/VideoPlayer';
+import ActionTimeline from '../components/ActionTimeline';
 import FloatingVideoPlayer from '../components/FloatingVideoPlayer';
 import NetworkInfo from '../components/NetworkInfo';
 import Footer from '../components/Footer';
-import { PlusCircle, RotateCw, Menu, X } from 'lucide-react';
+import { PlusCircle, Menu, X, Video, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import Reports from '../components/Reports';
 
@@ -26,7 +27,7 @@ const Dashboard: React.FC = () => {
   } = useActions();
   
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
-  const [showVideo, setShowVideo] = useState(true);
+  const [showVideo, setShowVideo] = useState(false); // Default to timeline
   const [transcribedText, setTranscribedText] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const currentDate = format(new Date(), 'dd MMM yyyy');
@@ -45,7 +46,7 @@ const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <RotateCw className="w-8 h-8 animate-spin text-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <span className="ml-2 text-lg">Loading...</span>
       </div>
     );
@@ -167,18 +168,19 @@ const Dashboard: React.FC = () => {
             <StatusKPIs stats={statusStats} />
           </div>
           
-          {/* Video/Recording Section - Full width on mobile */}
+          {/* Timeline Section - Full width on mobile */}
           <div className="w-full">
             <div className="bg-white rounded-lg shadow-md">
               <div className="flex items-center justify-between p-3 sm:p-4 border-b">
                 <h2 className="text-base sm:text-lg font-semibold">
-                  {showVideo ? 'Meeting Video' : 'Voice Recording'}
+                  {showVideo ? 'Meeting Video' : 'Actions Timeline'}
                 </h2>
                 <button
                   onClick={() => setShowVideo(!showVideo)}
-                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
+                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded flex items-center space-x-1"
                 >
-                  Switch to {showVideo ? 'Recording' : 'Video'}
+                  {showVideo ? <TrendingUp className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                  <span>Switch to {showVideo ? 'Timeline' : 'Video'}</span>
                 </button>
               </div>
               <div className="p-3 sm:p-4">
@@ -187,15 +189,7 @@ const Dashboard: React.FC = () => {
                     <VideoPlayer folderPath="/videos" />
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <AudioRecorder onTranscriptionComplete={handleTranscriptionComplete} />
-                    {transcribedText && (
-                      <div className="mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Transcribed Text:</h3>
-                        <p className="text-sm text-gray-600">{transcribedText}</p>
-                      </div>
-                    )}
-                  </div>
+                  <ActionTimeline actions={actions} />
                 )}
               </div>
             </div>
@@ -209,34 +203,29 @@ const Dashboard: React.FC = () => {
             <StatusKPIs stats={statusStats} />
           </div>
           
-          {/* Video/Recording Section - Takes 5 columns with EXACT SAME HEIGHT */}
+          {/* Timeline/Video Section - Takes 5 columns with EXACT SAME HEIGHT */}
           <div className="col-span-5">
             <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
               <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
                 <h2 className="text-lg font-semibold">
-                  {showVideo ? 'Meeting Video' : 'Voice Recording'}
+                  {showVideo ? 'Meeting Video' : 'Actions Timeline'}
                 </h2>
                 <button
                   onClick={() => setShowVideo(!showVideo)}
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center space-x-1"
                 >
-                  Switch to {showVideo ? 'Recording' : 'Video'}
+                  {showVideo ? <TrendingUp className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                  <span>Switch to {showVideo ? 'Timeline' : 'Video'}</span>
                 </button>
               </div>
-              <div className="p-4 flex-1 flex flex-col justify-center">
+              <div className="p-4 flex-1 flex flex-col justify-center overflow-hidden">
                 {showVideo ? (
                   <div className="h-full flex items-center justify-center">
                     <VideoPlayer folderPath="/videos" />
                   </div>
                 ) : (
-                  <div className="space-y-4 h-full flex flex-col justify-center">
-                    <AudioRecorder onTranscriptionComplete={handleTranscriptionComplete} />
-                    {transcribedText && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <h3 className="text-sm font-medium text-gray-700 mb-2">Transcribed Text:</h3>
-                        <p className="text-gray-600">{transcribedText}</p>
-                      </div>
-                    )}
+                  <div className="h-full overflow-y-auto">
+                    <ActionTimeline actions={actions} />
                   </div>
                 )}
               </div>
