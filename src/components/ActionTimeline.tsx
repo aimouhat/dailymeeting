@@ -48,11 +48,12 @@ const ActionTimeline: React.FC<ActionTimelineProps> = ({ actions }) => {
   const getDateRange = () => {
     const today = new Date();
     
-    if (timeRange === 'custom' && customStartDate && customEndDate) {
-      return {
-        start: startOfDay(customStartDate),
-        end: endOfDay(customEndDate)
-      };
+    if (timeRange === 'custom') {
+      // Ensure we have valid dates for custom range
+      const start = customStartDate ? startOfDay(customStartDate) : startOfDay(subDays(today, 6));
+      const end = customEndDate ? endOfDay(customEndDate) : endOfDay(today);
+      
+      return { start, end };
     }
     
     const days = parseInt(timeRange);
