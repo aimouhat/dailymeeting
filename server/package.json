@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
+<<<<<<< HEAD
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "sqlite3": "^5.1.7"
   }
 }
+=======
+    "sqlite3": "^5.1.7"
+  }
+} 
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b

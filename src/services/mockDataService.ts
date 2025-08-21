@@ -1,5 +1,9 @@
 import { Action } from '../types/action';
+<<<<<<< HEAD
 // import mockActionsData from '../data/mockActions.json';
+=======
+import mockActionsData from '../data/mockActions.json';
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 import mockReportsData from '../data/mockReports.json';
 
 // Simulate localStorage for persistence
@@ -139,7 +143,11 @@ class MockDataService {
       id: reportData.fileName,
       date: new Date().toISOString().split('T')[0],
       fileName: reportData.fileName,
+<<<<<<< HEAD
       filePath: `dailyrepport/${reportData.fileName}`
+=======
+      filePath: `Historical Reports/${reportData.fileName}`
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
     };
     
     // Remove existing report with same date if exists
@@ -177,4 +185,8 @@ class MockDataService {
   }
 }
 
+<<<<<<< HEAD
 // export const mockDataService = new MockDataService();
+=======
+export const mockDataService = new MockDataService();
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b

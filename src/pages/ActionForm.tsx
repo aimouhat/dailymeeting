@@ -23,8 +23,12 @@ const ActionForm: React.FC = () => {
     toDate: new Date().toISOString().split('T')[0],
     duration: 1,
     status: 'In Progress',
+<<<<<<< HEAD
     notes: '',
     criticality: 'Medium'
+=======
+    notes: ''
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   });
 
   // Add useEffect to handle success message timeout
@@ -57,8 +61,12 @@ const ActionForm: React.FC = () => {
         toDate: new Date().toISOString().split('T')[0],
         duration: 1,
         status: 'In Progress',
+<<<<<<< HEAD
         notes: '',
         criticality: 'Medium'
+=======
+        notes: ''
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add action');
@@ -69,6 +77,7 @@ const ActionForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+<<<<<<< HEAD
     setFormData(prev => {
       const updated = { ...prev, [name]: value };
       
@@ -85,6 +94,9 @@ const ActionForm: React.FC = () => {
       
       return updated;
     });
+=======
+    setFormData(prev => ({ ...prev, [name]: value }));
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   };
 
   return (
@@ -212,10 +224,13 @@ const ActionForm: React.FC = () => {
                       <option value="Mobile hopper">Mobile hopper</option>
                       <option value="Migration linking conveyors">Migration linking conveyors</option>
                       <option value="BWP">BWP</option>
+<<<<<<< HEAD
                       <option value="IROC">IROC</option>
                       <option value="MSL">MSL</option>
                       <option value="DEA">DEA</option>
                       <option value="Corse Reject">Corse Reject</option>
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                     </select>
                   </div>
 
@@ -232,13 +247,17 @@ const ActionForm: React.FC = () => {
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none"
                     >
                       <option value="">Select Discipline</option>
+<<<<<<< HEAD
                       <option value="Asset Management">Asset Management</option>                      
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                       <option value="Mechanical">Mechanical</option>
                       <option value="Electrical">Electrical</option>
                       <option value="Automation">Automation</option>
                       <option value="Process">Process</option>
                       <option value="Digitization">Digitization</option>
                       <option value="Operation">Operation</option>
+<<<<<<< HEAD
                       <option value="HSE">HSE</option>
                       <option value="ALL">ALL</option>
                     </select>
@@ -260,6 +279,8 @@ const ActionForm: React.FC = () => {
                       <option value="Medium">Medium</option>
                       <option value="High">High</option>
                       <option value="Critical">Critical</option>
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                     </select>
                   </div>
 
@@ -322,6 +343,7 @@ const ActionForm: React.FC = () => {
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     />
                   </div>
+<<<<<<< HEAD
 
                   {/* Duration (Calculated) */}
                   <div>
@@ -332,6 +354,8 @@ const ActionForm: React.FC = () => {
                       {formData.duration} day{formData.duration !== 1 ? 's' : ''}
                     </div>
                   </div>
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 </div>
 
                 {/* Notes */}

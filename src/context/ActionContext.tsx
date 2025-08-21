@@ -1,6 +1,10 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Action, AreaStats, StatusStats } from '../types/action';
+<<<<<<< HEAD
 import { getAllActions, addAction as apiAddAction, updateAction as apiUpdateAction, deleteAction as apiDeleteAction } from '../api/actions';
+=======
+import { mockDataService } from '../services/mockDataService';
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 
 interface ActionContextType {
   actions: Action[];
@@ -57,10 +61,19 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setIsLoading(true);
       setError(null);
+<<<<<<< HEAD
       const data = await getAllActions();
       setActions(data);
       calculateStats(data);
       setLastUpdated(new Date());
+=======
+      const data = await mockDataService.getAllActions();
+      setActions(data);
+      calculateStats(data);
+      setLastUpdated(new Date());
+      
+      // Reapply current filters to the new data
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       applyFiltersToData(data, currentFilters);
     } catch (err) {
       console.error('Error loading actions:', err);
@@ -74,10 +87,19 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const refreshInterval = setInterval(async () => {
       try {
+<<<<<<< HEAD
         const data = await getAllActions();
         setActions(data);
         calculateStats(data);
         setLastUpdated(new Date());
+=======
+        const data = await mockDataService.getAllActions();
+        setActions(data);
+        calculateStats(data);
+        setLastUpdated(new Date());
+        
+        // Reapply current filters to the new data
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
         applyFiltersToData(data, currentFilters);
       } catch (err) {
         console.error('Error during auto-refresh:', err);
@@ -89,6 +111,48 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [currentFilters]);
 
+<<<<<<< HEAD
+=======
+  // Set up mock WebSocket event handlers
+  useEffect(() => {
+    mockDataService.onActionAdded = (action: Action) => {
+      setActions(prev => {
+        const newActions = [...prev, action];
+        calculateStats(newActions);
+        applyFiltersToData(newActions, currentFilters);
+        return newActions;
+      });
+      setLastUpdated(new Date());
+    };
+
+    mockDataService.onActionUpdated = (action: Action) => {
+      setActions(prev => {
+        const updatedActions = prev.map(a => a.id === action.id ? action : a);
+        calculateStats(updatedActions);
+        applyFiltersToData(updatedActions, currentFilters);
+        return updatedActions;
+      });
+      setLastUpdated(new Date());
+    };
+
+    mockDataService.onActionDeleted = (id: number) => {
+      setActions(prev => {
+        const updatedActions = prev.filter(a => a.id !== id);
+        calculateStats(updatedActions);
+        applyFiltersToData(updatedActions, currentFilters);
+        return updatedActions;
+      });
+      setLastUpdated(new Date());
+    };
+
+    return () => {
+      mockDataService.onActionAdded = undefined;
+      mockDataService.onActionUpdated = undefined;
+      mockDataService.onActionDeleted = undefined;
+    };
+  }, [currentFilters]);
+
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   const calculateStats = (actions: Action[]) => {
     // Calculate area stats
     const areaCounts = actions.reduce((acc, action) => {
@@ -171,7 +235,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addAction = async (action: Omit<Action, 'id'>) => {
     try {
+<<<<<<< HEAD
       const newAction = await apiAddAction(action);
+=======
+      const newAction = await mockDataService.addAction(action);
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       setActions(prev => {
         const updatedActions = [...prev, newAction];
         calculateStats(updatedActions);
@@ -187,7 +255,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateAction = async (id: number, updates: Partial<Action>) => {
     try {
+<<<<<<< HEAD
       const updatedAction = await apiUpdateAction(id, updates);
+=======
+      const updatedAction = await mockDataService.updateAction(id, updates);
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       setActions(prev => {
         const updatedActions = prev.map(a => a.id === id ? updatedAction : a);
         calculateStats(updatedActions);
@@ -203,7 +275,11 @@ export const ActionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const deleteAction = async (id: number) => {
     try {
+<<<<<<< HEAD
       await apiDeleteAction(id);
+=======
+      await mockDataService.deleteAction(id);
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       setActions(prev => {
         const updatedActions = prev.filter(a => a.id !== id);
         calculateStats(updatedActions);

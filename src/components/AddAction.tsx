@@ -125,9 +125,12 @@ const AddAction: React.FC = () => {
                   <option value="Painting">Painting</option>
                   <option value="Insulation">Insulation</option>
                   <option value="Scaffolding">Scaffolding</option>
+<<<<<<< HEAD
                   <option value="IROC">IROC</option>
                   <option value="MSL">MSL</option>
                   <option value="DEA">DEA</option>
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 </select>
               </div>
 
@@ -156,8 +159,11 @@ const AddAction: React.FC = () => {
                   <option value="Painting">Painting</option>
                   <option value="Insulation">Insulation</option>
                   <option value="Scaffolding">Scaffolding</option>
+<<<<<<< HEAD
                   <option value="HSE">HSE</option>
                   <option value="ALL">ALL</option>
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 </select>
               </div>
 

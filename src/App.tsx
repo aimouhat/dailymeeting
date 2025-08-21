@@ -1,4 +1,5 @@
 import React from 'react';
+<<<<<<< HEAD
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import ActionForm from './pages/ActionForm';
@@ -29,6 +30,23 @@ function App() {
         </Router>
       </ActionProvider>
     </AuthProvider>
+=======
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Dashboard from './pages/Dashboard';
+import ActionForm from './pages/ActionForm';
+import { ActionProvider } from './context/ActionContext';
+
+function App() {
+  return (
+    <ActionProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/form" element={<ActionForm />} />
+        </Routes>
+      </Router>
+    </ActionProvider>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   );
 }
 

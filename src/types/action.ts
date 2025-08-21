@@ -10,7 +10,10 @@ export interface Action {
   tags: string;
   assignedTo: string;
   notes: string;
+<<<<<<< HEAD
   criticality: 'Low' | 'Medium' | 'High' | 'Critical';
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 }
 
 export interface AreaStats {

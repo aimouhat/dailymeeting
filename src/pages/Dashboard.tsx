@@ -4,16 +4,26 @@ import { useActions } from '../context/ActionContext';
 import ActionTable from '../components/ActionTable';
 import StatusKPIs from '../components/StatusKPIs';
 import FilterBar from '../components/FilterBar';
+<<<<<<< HEAD
 // import VideoPlayer from '../components/VideoPlayer';
+=======
+import VideoPlayer from '../components/VideoPlayer';
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 import ActionTimeline from '../components/ActionTimeline';
 import FloatingVideoPlayer from '../components/FloatingVideoPlayer';
 import NetworkInfo from '../components/NetworkInfo';
 import Footer from '../components/Footer';
+<<<<<<< HEAD
 import { PlusCircle, Menu, X, FileText, TrendingUp, Eye, EyeOff, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
 import { getHistoricalReports, saveReport as saveReportApi } from '../api/reports';
 import PdfViewerOverlay from '../components/PdfViewerOverlay';
+=======
+import { PlusCircle, Menu, X, Video, TrendingUp, Eye, EyeOff, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import Reports from '../components/Reports';
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 
 const Dashboard: React.FC = () => {
   const { 
@@ -29,6 +39,7 @@ const Dashboard: React.FC = () => {
   
   const [uniqueAreas, setUniqueAreas] = useState<string[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+<<<<<<< HEAD
   const [showTimeline, setShowTimeline] = useState(() => {
     const saved = localStorage.getItem('showTimeline');
     return saved !== null ? saved === 'true' : true;
@@ -45,6 +56,11 @@ const Dashboard: React.FC = () => {
   const [isPdfOpen, setIsPdfOpen] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [isUploadingReport, setIsUploadingReport] = useState(false);
+=======
+  const [showTimeline, setShowTimeline] = useState(true);
+  const [showVideo, setShowVideo] = useState(true);
+  const [showTimeManager, setShowTimeManager] = useState(true);
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   const currentDate = format(new Date(), 'dd MMM yyyy');
 
   useEffect(() => {
@@ -54,6 +70,7 @@ const Dashboard: React.FC = () => {
     }
   }, [actions]);
 
+<<<<<<< HEAD
   useEffect(() => {
     localStorage.setItem('showTimeline', String(showTimeline));
   }, [showTimeline]);
@@ -120,6 +137,8 @@ const Dashboard: React.FC = () => {
     }
   };
 
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -142,6 +161,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {showTimeManager && <FloatingVideoPlayer />}
+<<<<<<< HEAD
       <PdfViewerOverlay fileName={latestReportFileName} isOpen={isPdfOpen} onClose={() => setIsPdfOpen(false)} />
       {/* Hidden input for uploading report PDFs */}
       <input
@@ -151,6 +171,8 @@ const Dashboard: React.FC = () => {
         className="hidden"
         onChange={handleReportFileChange}
       />
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white shadow-lg">
         <div className="max-w-full mx-auto px-2 sm:px-4">
           {/* Mobile Header */}
@@ -224,10 +246,17 @@ const Dashboard: React.FC = () => {
                       ? 'bg-blue-600 text-white shadow-sm' 
                       : 'text-blue-200 hover:text-white hover:bg-blue-800'
                   }`}
+<<<<<<< HEAD
                   title={showVideo ? 'Hide Report' : 'Show Report'}
                 >
                   {showVideo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   <span>Daily Report PDF</span>
+=======
+                  title={showVideo ? 'Hide Video' : 'Show Video'}
+                >
+                  {showVideo ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  <span>Video</span>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 </button>
                 <button
                   onClick={() => setShowTimeline(!showTimeline)}
@@ -255,6 +284,7 @@ const Dashboard: React.FC = () => {
                 </button>
               </div>
               
+<<<<<<< HEAD
               <button
                 onClick={() => {
                   // Filter actions for In Progress, Delay, Not started
@@ -298,6 +328,9 @@ const Dashboard: React.FC = () => {
                 <FileText className="w-5 h-5 mr-2" />
                 {isUploadingReport ? 'Uploading...' : 'Add Report'}
               </button>
+=======
+              <Reports />
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
               <Link 
                 to="/form" 
                 className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -338,6 +371,7 @@ const Dashboard: React.FC = () => {
               </div>
               
               <div className="flex flex-col space-y-2">
+<<<<<<< HEAD
                 <button 
                   onClick={() => { setIsMobileMenuOpen(false); handleAddReportClick(); }}
                   disabled={isUploadingReport}
@@ -346,6 +380,9 @@ const Dashboard: React.FC = () => {
                   <FileText className="w-5 h-5 mr-2" />
                   {isUploadingReport ? 'Uploading...' : 'Add Report'}
                 </button>
+=======
+                <Reports />
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 <Link 
                   to="/form" 
                   className="bg-gradient-to-r from-green-500 to-green-600 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center transition-all duration-300"
@@ -408,23 +445,37 @@ const Dashboard: React.FC = () => {
                 ? 'grid-cols-12' 
                 : 'grid-cols-1'
             }`}>
+<<<<<<< HEAD
               {/* Report PDF Section - Conditional */}
+=======
+              {/* Meeting Video Section - Conditional */}
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
               {showVideo && (
                 <div className={showTimeline ? 'col-span-5' : 'col-span-12'}>
                   <div className="bg-white rounded-lg shadow-md h-full flex flex-col">
                     <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
                       <div className="flex items-center space-x-2">
+<<<<<<< HEAD
                         <FileText className="w-5 h-5 text-blue-600" />
                         <h2 className="text-lg font-semibold">Daily Report PDF</h2>
+=======
+                        <Video className="w-5 h-5 text-blue-600" />
+                        <h2 className="text-lg font-semibold">Meeting Video</h2>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                       </div>
                       <button
                         onClick={() => setShowVideo(false)}
                         className="text-gray-400 hover:text-gray-600 p-1"
+<<<<<<< HEAD
                         title="Hide Report"
+=======
+                        title="Hide Video"
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                       >
                         <EyeOff className="w-4 h-4" />
                       </button>
                     </div>
+<<<<<<< HEAD
                     <button
                       onClick={() => latestReportFileName && setIsPdfOpen(true)}
                       disabled={!latestReportFileName}
@@ -437,6 +488,13 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                     </button>
+=======
+                    <div className="p-4 flex-1 flex flex-col justify-center">
+                      <div className="h-full flex items-center justify-center">
+                        <VideoPlayer folderPath="/videos" />
+                      </div>
+                    </div>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                   </div>
                 </div>
               )}

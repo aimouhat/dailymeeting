@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
+<<<<<<< HEAD
 import { ChevronDown, ChevronUp, Circle, Edit2, Check, X, Trash2, Eye, EyeOff, Clock } from 'lucide-react';
+=======
+import { ChevronDown, ChevronUp, Circle, Edit2, Check, X, Trash2, Eye, EyeOff } from 'lucide-react';
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 import { Action } from '../types/action';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useActions } from '../context/ActionContext';
+<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
 import { getActionHistory } from '../api/actions';
 
@@ -17,6 +22,8 @@ interface LogItem {
   timestamp: string;
   changes: string | null;
 }
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 
 interface ActionTableProps {
   actions: Action[];
@@ -25,7 +32,10 @@ interface ActionTableProps {
 
 const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) => {
   const { updateAction, deleteAction } = useActions();
+<<<<<<< HEAD
   const navigate = useNavigate();
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   const [sortField, setSortField] = useState<keyof Action>('fromDate');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -33,10 +43,13 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
   const [error, setError] = useState<string | null>(null);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+<<<<<<< HEAD
   const [recentLogsById, setRecentLogsById] = useState<Record<number, LogItem | null>>({});
   const [historyOpenIds, setHistoryOpenIds] = useState<Set<number>>(new Set());
   const [historyLogsById, setHistoryLogsById] = useState<Record<number, LogItem[]>>({});
   const [historyLoadingById, setHistoryLoadingById] = useState<Record<number, boolean>>({});
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -46,6 +59,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+<<<<<<< HEAD
   // Ensure all rows are expanded on mobile so details are visible
   React.useEffect(() => {
     if (isMobileView) {
@@ -54,6 +68,8 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     }
   }, [isMobileView, actions]);
 
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   const handleSort = (field: keyof Action) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -79,6 +95,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     if (!editingId) return;
 
     try {
+<<<<<<< HEAD
       // Front-end guard: if nothing changed, skip API call
       const original = actions.find(a => a.id === editingId);
       if (original) {
@@ -94,6 +111,8 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
         }
       }
 
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       if (editingAction.fromDate && editingAction.toDate) {
         const fromDate = new Date(editingAction.fromDate);
         const toDate = new Date(editingAction.toDate);
@@ -106,6 +125,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
       setEditingId(null);
       setEditingAction({});
       setError(null);
+<<<<<<< HEAD
 
       // Fetch and show the most recent log for this action
       try {
@@ -121,6 +141,8 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
       } catch (e) {
         // Ignore errors for the toast rendering
       }
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
     } catch (err) {
       setError('Failed to update action. Please try again.');
       console.error('Error updating action:', err);
@@ -169,6 +191,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     setExpandedRows(newExpanded);
   };
 
+<<<<<<< HEAD
   const toggleHistory = async (id: number) => {
     const open = new Set(historyOpenIds);
     if (open.has(id)) {
@@ -195,6 +218,8 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     setRecentLogsById(prev => ({ ...prev, [id]: null }));
   };
 
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   const sortedActions = [...actions].sort((a, b) => {
     let comparison = 0;
     
@@ -226,6 +251,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     }
   };
 
+<<<<<<< HEAD
   const renderLogSummary = (log: LogItem) => {
     if (!log) return null;
     let lines: string[] = [];
@@ -278,6 +304,8 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
     );
   };
 
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   const SortIcon = ({ field }: { field: keyof Action }) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? <ChevronUp className="inline w-4 h-4" /> : <ChevronDown className="inline w-4 h-4" />;
@@ -307,6 +335,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
               <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-medium text-gray-900 truncate">
+<<<<<<< HEAD
                     {editingId === action.id ? (
                       <input
                         type="text"
@@ -318,6 +347,9 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
                     ) : (
                       action.actionPlan
                     )}
+=======
+                    {action.actionPlan}
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                   </h3>
                   <div className="flex items-center mt-1">
                     <Circle className={`w-3 h-3 mr-2 ${getStatusColor(action.status)}`} />
@@ -325,6 +357,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 ml-2">
+<<<<<<< HEAD
                   {editingId === action.id ? (
                     <>
                       <button
@@ -371,12 +404,33 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
                       </button>
                     </>
                   )}
+=======
+                  <button
+                    onClick={() => toggleRowExpansion(action.id)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    {expandedRows.has(action.id) ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => startEditing(action)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(action.id)}
+                    className="text-red-400 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 </div>
               </div>
             </div>
 
             {/* Card Content */}
             <div className="p-4 space-y-3">
+<<<<<<< HEAD
               {editingId === action.id ? (
                 <>
                   <div className="grid grid-cols-2 gap-3 text-sm">
@@ -564,6 +618,46 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
                     </div>
                   )}
                 </>
+=======
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-gray-500">Area:</span>
+                  <p className="font-medium">{action.area}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Discipline:</span>
+                  <p className="font-medium">{action.discipline}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">From:</span>
+                  <p className="font-medium">{format(new Date(action.fromDate), 'dd/MM/yyyy')}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">To:</span>
+                  <p className="font-medium">{format(new Date(action.toDate), 'dd/MM/yyyy')}</p>
+                </div>
+              </div>
+
+              {expandedRows.has(action.id) && (
+                <div className="space-y-3 pt-3 border-t border-gray-100">
+                  <div>
+                    <span className="text-gray-500 text-sm">Assigned To:</span>
+                    <p className="font-medium">{action.assignedTo || 'Not assigned'}</p>
+                  </div>
+                  {action.tags && (
+                    <div>
+                      <span className="text-gray-500 text-sm">Tags:</span>
+                      <p className="font-medium">{action.tags}</p>
+                    </div>
+                  )}
+                  {action.notes && (
+                    <div>
+                      <span className="text-gray-500 text-sm">Notes:</span>
+                      <p className="font-medium">{action.notes}</p>
+                    </div>
+                  )}
+                </div>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
               )}
             </div>
           </div>
@@ -612,12 +706,15 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
               </th>
               <th 
                 className="w-[8%] px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+<<<<<<< HEAD
                 onClick={() => handleSort('criticality')}
               >
                 Criticality <SortIcon field="criticality" />
               </th>
               <th 
                 className="w-[8%] px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 onClick={() => handleSort('assignedTo')}
               >
                 Assigned To <SortIcon field="assignedTo" />
@@ -656,6 +753,7 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
           </thead>
           <tbody className="bg-white divide-y divide-gray-200 text-base">
             {sortedActions.map((action) => (
+<<<<<<< HEAD
               <React.Fragment key={action.id}>
                 <tr className="hover:bg-gray-50 transition-colors">
                   <td className="px-2 py-4">
@@ -908,6 +1006,181 @@ const ActionTable: React.FC<ActionTableProps> = ({ actions, onActionDeleted }) =
                   </tr>
                 )}
               </React.Fragment>
+=======
+              <tr key={action.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-2 py-4">
+                  {editingId === action.id ? (
+                    <div className="flex space-x-1">
+                      <button 
+                        onClick={saveEditing} 
+                        className="text-green-600 hover:text-green-800"
+                        title="Save changes"
+                      >
+                        <Check className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={cancelEditing} 
+                        className="text-red-600 hover:text-red-800"
+                        title="Cancel editing"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex space-x-1">
+                      <button 
+                        onClick={() => startEditing(action)} 
+                        className="text-gray-600 hover:text-gray-800"
+                        title="Edit action"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(action.id)} 
+                        className="text-red-600 hover:text-red-800"
+                        title="Delete action"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  {editingId === action.id ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={editingAction.actionPlan || ''}
+                        onChange={(e) => handleEditChange('actionPlan', e.target.value)}
+                        className="w-full px-3 py-2 border rounded text-base"
+                        placeholder="Action Plan"
+                      />
+                      <input
+                        type="text"
+                        value={editingAction.tags || ''}
+                        onChange={(e) => handleEditChange('tags', e.target.value)}
+                        className="w-full px-3 py-2 border rounded text-base"
+                        placeholder="Tags (comma separated)"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {action.actionPlan}
+                      {action.tags && (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                          {action.tags}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {editingId === action.id ? (
+                    <select
+                      value={editingAction.area || ''}
+                      onChange={(e) => handleEditChange('area', e.target.value)}
+                      className="w-full px-3 py-2 border rounded text-base"
+                    >
+                      <option value="Storage and handling">Storage and handling</option>
+                      <option value="Washing">Washing</option>
+                      <option value="Flotation">Flotation</option>
+                      <option value="Utilities">Utilities</option>
+                      <option value="BWP">BWP</option>
+                    </select>
+                  ) : (
+                    action.area
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {editingId === action.id ? (
+                    <select
+                      value={editingAction.discipline || ''}
+                      onChange={(e) => handleEditChange('discipline', e.target.value)}
+                      className="w-full px-3 py-2 border rounded text-base"
+                    >
+                      <option value="Automation">Automation</option>
+                      <option value="Mechanical">Mechanical</option>
+                      <option value="Electrical">Electrical</option>
+                      <option value="Operation">Operation</option>
+                      <option value="Process">Process</option>
+                      <option value="Digitization">Digitization</option>
+                    </select>
+                  ) : (
+                    action.discipline
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {editingId === action.id ? (
+                    <input
+                      type="text"
+                      value={editingAction.assignedTo || ''}
+                      onChange={(e) => handleEditChange('assignedTo', e.target.value)}
+                      className="w-full px-3 py-2 border rounded text-base"
+                    />
+                  ) : (
+                    action.assignedTo
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {editingId === action.id ? (
+                    <DatePicker
+                      selected={editingAction.fromDate ? new Date(editingAction.fromDate) : null}
+                      onChange={(date) => handleEditChange('fromDate', date?.toISOString().split('T')[0])}
+                      className="w-full px-3 py-2 border rounded text-base"
+                      dateFormat="dd/MM/yyyy"
+                    />
+                  ) : (
+                    format(new Date(action.fromDate), 'dd/MM/yyyy')
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {editingId === action.id ? (
+                    <DatePicker
+                      selected={editingAction.toDate ? new Date(editingAction.toDate) : null}
+                      onChange={(date) => handleEditChange('toDate', date?.toISOString().split('T')[0])}
+                      className="w-full px-3 py-2 border rounded text-base"
+                      dateFormat="dd/MM/yyyy"
+                    />
+                  ) : (
+                    format(new Date(action.toDate), 'dd/MM/yyyy')
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {action.duration}
+                </td>
+                <td className="px-6 py-4 text-sm">
+                  {editingId === action.id ? (
+                    <select
+                      value={editingAction.status || ''}
+                      onChange={(e) => handleEditChange('status', e.target.value)}
+                      className="w-full px-3 py-2 border rounded text-base"
+                    >
+                      <option value="Not started">Not started</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Delay">Delay</option>
+                      <option value="Done">Done</option>
+                    </select>
+                  ) : (
+                    <span className="flex items-center">
+                      <Circle className={`w-4 h-4 mr-2 ${getStatusColor(action.status)}`} />
+                      {action.status}
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {editingId === action.id ? (
+                    <textarea
+                      value={editingAction.notes || ''}
+                      onChange={(e) => handleEditChange('notes', e.target.value)}
+                      className="w-full px-3 py-2 border rounded text-base"
+                      rows={2}
+                    />
+                  ) : (
+                    action.notes
+                  )}
+                </td>
+              </tr>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
             ))}
           </tbody>
         </table>

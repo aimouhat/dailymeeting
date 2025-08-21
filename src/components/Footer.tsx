@@ -1,9 +1,14 @@
 import React from 'react';
+<<<<<<< HEAD
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Footer: React.FC = () => {
   const { user, logout } = useAuth();
+=======
+
+const Footer: React.FC = () => {
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   return (
     <footer className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white py-2 mt-auto">
       <div className="max-w-full mx-auto px-2 sm:px-4">
@@ -19,12 +24,15 @@ const Footer: React.FC = () => {
               "We don't just extract value from the earth – we transform data into decisions"
             </span>
             <span className="text-gray-400">© 2025 OCP Group</span>
+<<<<<<< HEAD
             {user?.role === 'admin' && (
               <Link to="/admin" className="text-green-300 hover:text-green-200 underline">Admin</Link>
             )}
             {user && (
               <button onClick={logout} className="text-red-300 hover:text-red-200 underline">Logout</button>
             )}
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
           </div>
         </div>
       </div>

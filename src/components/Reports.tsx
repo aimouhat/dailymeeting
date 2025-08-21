@@ -4,8 +4,12 @@ import { useActions } from '../context/ActionContext';
 import { format, isSameDay, parseISO } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+<<<<<<< HEAD
 import { getHistoricalReports, saveReport as saveReportApi } from '../api/reports';
 import api from '../api/http';
+=======
+import { mockDataService } from '../services/mockDataService';
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
 
 interface Report {
   id: string;
@@ -21,7 +25,10 @@ const Reports: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+<<<<<<< HEAD
   const [isOpening, setIsOpening] = useState<string | null>(null);
+=======
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
   
   const today = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
@@ -46,7 +53,11 @@ const Reports: React.FC = () => {
     const loadHistoricalReports = async () => {
       try {
         setIsLoading(true);
+<<<<<<< HEAD
         const reports = await getHistoricalReports();
+=======
+        const reports = await mockDataService.getAllReports();
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
         setHistoricalReports(reports);
       } catch (error) {
         console.error('Error loading historical reports:', error);
@@ -355,9 +366,15 @@ const Reports: React.FC = () => {
       // Save the PDF directly
       doc.save(fileName);
       
+<<<<<<< HEAD
       // Save to backend
       const pdfData = doc.output('datauristring');
       await saveReportApi({ fileName, pdfData });
+=======
+      // Save to mock service
+      const pdfData = doc.output('datauristring');
+      await mockDataService.saveReport({ fileName, pdfData });
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
       
       return true;
     } catch (error) {
@@ -383,7 +400,11 @@ const Reports: React.FC = () => {
           id: fileName,
           date: format(today, 'yyyy-MM-dd'),
           fileName,
+<<<<<<< HEAD
           filePath: `dailyrepport/${fileName}`,
+=======
+          filePath: `Historical Reports/${fileName}`,
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
         };
 
         let updatedReports;
@@ -402,6 +423,7 @@ const Reports: React.FC = () => {
     }
   };
 
+<<<<<<< HEAD
   const openReport = async (report: Report) => {
     try {
       setIsOpening(report.fileName);
@@ -415,14 +437,27 @@ const Reports: React.FC = () => {
       alert('Failed to open the report. Please try again.');
     } finally {
       setIsOpening(null);
+=======
+  const downloadReport = (report: Report) => {
+    try {
+      // Since we're using static data, we'll just show a message
+      alert(`In a real application, this would download: ${report.fileName}`);
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      alert('Failed to download the report. Please try again.');
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
     }
   };
 
   return (
     <div className="relative">
       <button
+<<<<<<< HEAD
         type="button"
         onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
+=======
+        onClick={() => setIsOpen(!isOpen)}
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
         className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium py-2 px-4 rounded-md flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl"
       >
         <Download className="w-5 h-5 mr-2" />
@@ -473,7 +508,11 @@ const Reports: React.FC = () => {
               </div>
 
               <div className="bg-white rounded-xl shadow-md p-3 sm:p-5">
+<<<<<<< HEAD
                 <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Daily Reports</h3>
+=======
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Historical Reports</h3>
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                 <div className="space-y-2 max-h-32 sm:max-h-48 overflow-y-auto">
                   {isLoading ? (
                     <div className="flex items-center justify-center py-4">
@@ -493,6 +532,7 @@ const Reports: React.FC = () => {
                           </div>
                         </div>
                         <button
+<<<<<<< HEAD
                           onClick={() => openReport(report)}
                           className="text-green-500 hover:text-green-600 flex-shrink-0 ml-2"
                           disabled={isOpening === report.fileName}
@@ -502,6 +542,12 @@ const Reports: React.FC = () => {
                           ) : (
                             <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                           )}
+=======
+                          onClick={() => downloadReport(report)}
+                          className="text-green-500 hover:text-green-600 flex-shrink-0 ml-2"
+                        >
+                          <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+>>>>>>> 2574854e5c34a2aec331a214143ad71f80260c4b
                         </button>
                       </div>
                     ))
